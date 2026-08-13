@@ -126,14 +126,14 @@ See `.env.example`. Required in production: `DATABASE_URL`, `AUTH_SECRET` (32+ c
 
 ## Deployment
 
-**Vercel** (recommended)
-1. Push the repo to GitHub, import into Vercel.
-2. Add a managed Postgres (Neon/Supabase/RDS) and set `DATABASE_URL`.
-3. Set `AUTH_SECRET`, `APP_URL` (your domain), and any provider keys.
-4. Build command is the default (`npm run build` runs `prisma generate` first).
-5. Run `npm run db:deploy && npm run db:seed` once against the production DB.
-6. Set `STORAGE_PROVIDER=s3` with R2/S3 credentials (Vercel's filesystem is ephemeral —
-   implement the S3 provider in `lib/storage` with `@aws-sdk/client-s3`).
+**→ Full step-by-step guide: [`docs/DEPLOY.md`](docs/DEPLOY.md)** (Vercel + Supabase + Vercel Blob, ~15 min, free tier)
+
+Short version:
+1. Create a Supabase project; copy the pooler URI (6543) and direct URI (5432).
+2. Run `setup-cloud-db.bat` (or `npm run db:push && npm run db:seed` with `DATABASE_URL` set) to create tables + seed.
+3. Import the GitHub repo into Vercel and set `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `APP_URL`, `STORAGE_PROVIDER=blob`.
+4. Create a Vercel Blob store (token is auto-injected) and redeploy.
+5. Add `SMS_PROVIDER=msg91` + `SMS_API_KEY` when you want real OTP delivery.
 
 **VPS / Docker**: run `docker compose up -d` for Postgres, `npm run build && npm start`
 behind Nginx/Caddy with HTTPS.
