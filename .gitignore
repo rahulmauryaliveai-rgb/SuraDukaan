@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+build/
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+public/uploads/
+coverage/
+src/generated/
+.pgdata/
+.setup-done
+.pgdata/
+.DS_Store
