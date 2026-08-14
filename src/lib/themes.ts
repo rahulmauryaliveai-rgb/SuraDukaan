@@ -456,6 +456,16 @@ export function themeCssVars(
   } as React.CSSProperties;
 }
 
+/** True when the theme's page background is dark, so overlays need light text. */
+export function isDarkTheme(theme: ThemeTokens): boolean {
+  const hex = theme.colors.bg.replace("#", "");
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  // Rec. 601 relative luminance, 0–255.
+  return 0.299 * r + 0.587 * g + 0.114 * b < 128;
+}
+
 /** Google Fonts stylesheet URL covering every font used by the registry. */
 export function themeFontHref(theme: ThemeTokens): string {
   const families = [...new Set([theme.fontHeading, theme.fontBody])];

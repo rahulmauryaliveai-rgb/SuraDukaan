@@ -20,12 +20,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
     return [
       ...staticPages,
-      ...shops.map((s) => ({
-        url: appUrl(`/${s.slug}`),
-        lastModified: s.updatedAt,
-        changeFrequency: "daily" as const,
-        priority: 0.8,
-      })),
+      // Welcome page (the shareable link) and the product catalog behind it.
+      ...shops.flatMap((s) => [
+        {
+          url: appUrl(`/${s.slug}`),
+          lastModified: s.updatedAt,
+          changeFrequency: "daily" as const,
+          priority: 0.8,
+        },
+        {
+          url: appUrl(`/${s.slug}/shop`),
+          lastModified: s.updatedAt,
+          changeFrequency: "daily" as const,
+          priority: 0.7,
+        },
+      ]),
     ];
   } catch {
     return staticPages;

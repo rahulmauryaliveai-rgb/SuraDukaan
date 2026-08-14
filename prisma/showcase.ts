@@ -30,6 +30,12 @@ export interface ShowcaseShop {
   description: string;
   logoUrl: string;
   coverUrl: string;
+  address?: string;
+  state?: string;
+  pincode?: string;
+  email?: string;
+  openingHours?: string;
+  instagram?: string;
   categories: string[];
   products: ShowcaseProduct[];
 }
@@ -49,6 +55,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Three generations of handcrafted silver and gold. Bridal sets, payals and everyday pieces — message us for today's rate.",
     logoUrl: u("1611591437281-460bfbe1220a", 200),
     coverUrl: u("1610375461246-83df859d849d", 1600),
+    address: "12 Johari Bazaar, Near Hawa Mahal",
+    state: "Rajasthan",
+    pincode: "302003",
+    email: "contact@sharmajewellers.in",
+    openingHours: "Mon–Sat 11am–8pm · Sun closed",
+    instagram: "@sharmajewellers",
     categories: ["Bridal", "Silver Payals", "Daily Wear"],
     products: [
       { name: "Kundan Bridal Necklace Set", price: 45000, discountPrice: 39999, category: "Bridal", featured: true, tags: ["kundan", "bridal"], description: "Handcrafted kundan set with matching earrings and maang tikka. Certified stones.", image: u("1601121141461-9d6647bca1ed") },
@@ -72,6 +84,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Fresh mithai, cakes and namkeen made every morning. Custom orders for weddings and festivals — order a day ahead.",
     logoUrl: u("1509440159596-0249088772ff", 200),
     coverUrl: u("1517433670267-08bbd4be890f", 1600),
+    address: "78 Hazratganj Main Road",
+    state: "Uttar Pradesh",
+    pincode: "226001",
+    email: "orders@guptasweets.in",
+    openingHours: "Open all days 8am–10pm",
+    instagram: "@guptasweetslko",
     categories: ["Mithai", "Cakes", "Namkeen"],
     products: [
       { name: "Kaju Katli (500g)", price: 650, category: "Mithai", featured: true, tags: ["mithai", "kaju"], description: "Pure cashew barfi with edible silver leaf. Made fresh daily.", image: u("1666190092159-3171cf0fbb12") },
@@ -95,6 +113,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Modern everyday fashion for men — shirts, denim, sneakers and accessories. Order directly on WhatsApp.",
     logoUrl: u("1503341504253-dff4815485f1", 200),
     coverUrl: u("1441986300917-64674bd600d8", 1600),
+    address: "Shop 14, Linking Road, Bandra West",
+    state: "Maharashtra",
+    pincode: "400050",
+    email: "hello@urbanthreads.in",
+    openingHours: "Mon–Sun 11am–9pm",
+    instagram: "@urbanthreads",
     categories: ["Men", "Footwear", "Accessories"],
     products: [
       { name: "Premium Cotton Shirt", price: 899, discountPrice: 749, category: "Men", featured: true, variants: [{ name: "Size", options: ["S", "M", "L", "XL", "XXL"] }], tags: ["shirt", "cotton"], description: "Breathable 100% cotton shirt with a tailored fit. Perfect for office and festive wear.", image: u("1596755094514-f87e34085b2c") },
@@ -118,6 +142,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Your neighbourhood kirana, now online. Free home delivery on orders above ₹500 within 3 km.",
     logoUrl: u("1542838132-92c53300491e", 200),
     coverUrl: u("1578916171728-46686eac8d58", 1600),
+    address: "Plot 5, Baner Road",
+    state: "Maharashtra",
+    pincode: "411045",
+    email: "care@dailyfresh.in",
+    openingHours: "Daily 7am–10pm",
+    instagram: "@dailyfreshpune",
     categories: ["Staples", "Fresh Produce", "Household"],
     products: [
       { name: "Basmati Rice (5kg)", price: 650, discountPrice: 599, category: "Staples", featured: true, tags: ["rice", "basmati"], description: "Aged long-grain basmati. Ideal for biryani and pulao.", image: u("1586201375761-83865001e31c") },
@@ -141,6 +171,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Fresh flower bouquets, gift hampers and event decor. Same-day delivery for orders before 4 pm.",
     logoUrl: u("1487070183336-b863922373d4", 200),
     coverUrl: u("1563241527-3004b7be0ffd", 1600),
+    address: "22 Indiranagar 100 Feet Road",
+    state: "Karnataka",
+    pincode: "560038",
+    email: "orders@bloomandpetal.in",
+    openingHours: "Daily 9am–8pm",
+    instagram: "@bloomandpetal",
     categories: ["Bouquets", "Gift Hampers", "Plants"],
     products: [
       { name: "Red Rose Bouquet (12 stems)", price: 899, discountPrice: 799, category: "Bouquets", featured: true, tags: ["roses", "bouquet"], description: "A dozen premium red roses wrapped in craft paper with a ribbon.", image: u("1518895949257-7621c3c786d7") },
@@ -164,6 +200,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Mobiles, audio and home appliances at honest prices. All products come with full manufacturer warranty.",
     logoUrl: u("1550009158-9ebf69173e03", 200),
     coverUrl: u("1441986300917-64674bd600d8", 1600),
+    address: "Gaffar Market, Karol Bagh",
+    state: "Delhi",
+    pincode: "110005",
+    email: "sales@rkelectronics.in",
+    openingHours: "Mon–Sat 10am–8pm",
+    instagram: "@rkelectronics",
     categories: ["Audio", "Mobile Accessories", "Appliances"],
     products: [
       { name: "Wireless Earbuds", price: 2499, discountPrice: 1899, category: "Audio", featured: true, tags: ["earbuds", "bluetooth"], description: "40-hour total playback, ENC calling and fast charge. 1-year warranty.", image: u("1590658268037-6bf12165a8df") },
@@ -187,6 +229,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Gaming gear, keyboards and PC components. Genuine stock, box-packed, with bill and warranty.",
     logoUrl: u("1591488320449-011701bb6704", 200),
     coverUrl: u("1587202372775-e229f172b9d7", 1600),
+    address: "3rd Floor, Chenoy Trade Centre, Secunderabad",
+    state: "Telangana",
+    pincode: "500003",
+    email: "support@technohub.in",
+    openingHours: "Mon–Sat 11am–8:30pm",
+    instagram: "@technohub",
     categories: ["Gaming", "Keyboards", "Components"],
     products: [
       { name: "Mechanical Keyboard RGB", price: 4499, discountPrice: 3799, category: "Keyboards", featured: true, variants: [{ name: "Switch", options: ["Red", "Blue", "Brown"] }], tags: ["keyboard", "gaming"], description: "Hot-swappable switches, per-key RGB and a detachable Type-C cable.", image: u("1618384887929-16ec33fab9ef") },
@@ -209,6 +257,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Authentic Punjabi tandoor since 1978. Dine in, take away or order on WhatsApp for home delivery.",
     logoUrl: u("1517248135467-4c7edcad34c4", 200),
     coverUrl: u("1414235077428-338989a2e8c0", 1600),
+    address: "Lawrence Road, Near Company Bagh",
+    state: "Punjab",
+    pincode: "143001",
+    email: "table@royaltandoor.in",
+    openingHours: "Daily 12pm–11pm",
+    instagram: "@royaltandoor",
     categories: ["Tandoor", "Curries", "Breads"],
     products: [
       { name: "Butter Chicken (Full)", price: 420, category: "Curries", featured: true, tags: ["chicken", "curry"], description: "Slow-cooked in tomato and cream gravy, finished with white butter.", image: u("1603894584373-5ac82b2ae398") },
@@ -231,6 +285,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Licensed pharmacy with home delivery. Send your prescription on WhatsApp and we will confirm availability.",
     logoUrl: u("1631549916768-4119b2e5f926", 200),
     coverUrl: u("1587854692152-cbe660dbde88", 1600),
+    address: "45 Anna Salai, Nandanam",
+    state: "Tamil Nadu",
+    pincode: "600035",
+    email: "care@wellnesschemist.in",
+    openingHours: "Open 24 hours",
+    instagram: "@wellnesschemist",
     categories: ["Wellness", "Personal Care", "Devices"],
     products: [
       { name: "Vitamin D3 Tablets (60)", price: 420, discountPrice: 379, category: "Wellness", featured: true, tags: ["vitamin", "supplement"], description: "Once-weekly 60000 IU tablets. Please consult your doctor.", image: u("1584308666744-24d5c474f2ae") },
@@ -253,6 +313,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Handmade terracotta, block prints and home accents made by artisan families in Rajasthan.",
     logoUrl: u("1513519245088-0e12902e5a38", 200),
     coverUrl: u("1528283648649-33347faa5d9e", 1600),
+    address: "Near Clock Tower, Sardar Market",
+    state: "Rajasthan",
+    pincode: "342001",
+    email: "hello@mitticrafts.in",
+    openingHours: "Mon–Sat 10am–7pm",
+    instagram: "@mitticrafts",
     categories: ["Pottery", "Textiles", "Wall Art"],
     products: [
       { name: "Terracotta Water Jug", price: 899, category: "Pottery", featured: true, tags: ["terracotta", "pottery"], description: "Hand-thrown clay jug that keeps water naturally cool.", image: u("1578749556568-bc2c40e68b61") },
@@ -274,6 +340,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Training gear, footwear and gym equipment. Bulk orders for teams and academies welcome.",
     logoUrl: u("1517836357463-d25dfeac3438", 200),
     coverUrl: u("1534438327276-14e5300c3a48", 1600),
+    address: "88 Jayanagar 4th Block",
+    state: "Karnataka",
+    pincode: "560011",
+    email: "team@peaksports.in",
+    openingHours: "Mon–Sun 10am–9pm",
+    instagram: "@peaksports",
     categories: ["Footwear", "Training", "Apparel"],
     products: [
       { name: "Running Shoes Pro", price: 4999, discountPrice: 3999, category: "Footwear", featured: true, variants: [{ name: "Size", options: ["7", "8", "9", "10", "11"] }], tags: ["shoes", "running"], description: "Responsive foam midsole with a breathable knit upper.", image: u("1542291026-7eec264c27ff") },
@@ -296,6 +368,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Solid wood furniture made to order. Visit our workshop or send us your room measurements on WhatsApp.",
     logoUrl: u("1538688525198-9b88f6f53126", 200),
     coverUrl: u("1555041469-a586c61ea9bc", 1600),
+    address: "Workshop 7, Kaloor Junction",
+    state: "Kerala",
+    pincode: "682017",
+    email: "studio@teakandco.in",
+    openingHours: "Mon–Sat 10am–7pm",
+    instagram: "@teakandco",
     categories: ["Seating", "Tables", "Storage"],
     products: [
       { name: "Sheesham Dining Table (6 Seater)", price: 42000, discountPrice: 37500, category: "Tables", featured: true, tags: ["dining", "sheesham"], description: "Solid sheesham top with a hand-rubbed natural finish.", image: u("1615874959474-d609969a20ed") },
@@ -318,6 +396,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Skincare, makeup and salon-quality tools. Genuine brands only — message us for shade matching help.",
     logoUrl: u("1596462502278-27bfdc403348", 200),
     coverUrl: u("1487412947147-5cebf100ffc2", 1600),
+    address: "Shop 3, Hill Road, Bandra West",
+    state: "Maharashtra",
+    pincode: "400050",
+    email: "hello@glowbeautybar.in",
+    openingHours: "Daily 11am–9pm",
+    instagram: "@glowbeautybar",
     categories: ["Skincare", "Makeup", "Tools"],
     products: [
       { name: "Vitamin C Face Serum", price: 1299, discountPrice: 999, category: "Skincare", featured: true, tags: ["serum", "vitaminc"], description: "10% vitamin C with hyaluronic acid for daily brightening.", image: u("1620916566398-39f1143ab7be") },
@@ -340,6 +424,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Safe, age-appropriate toys and learning kits for ages 1–12. Gift wrapping available on request.",
     logoUrl: u("1566576912321-d58ddd7a6088", 200),
     coverUrl: u("1566576912321-d58ddd7a6088", 1600),
+    address: "56 Palasia Main Road",
+    state: "Madhya Pradesh",
+    pincode: "452001",
+    email: "hello@littlestars.in",
+    openingHours: "Mon–Sun 10am–8pm",
+    instagram: "@littlestarstoys",
     categories: ["Learning", "Soft Toys", "Outdoor"],
     products: [
       { name: "Wooden Building Blocks (100)", price: 1299, discountPrice: 1099, category: "Learning", featured: true, tags: ["blocks", "wooden"], description: "Smooth-sanded blocks in non-toxic colours. Ages 3+.", image: u("1587654780291-39c9404d746b") },
@@ -362,6 +452,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Chartered accountants offering GST, ITR and company registration services. Fixed, transparent fees.",
     logoUrl: u("1454165804606-c3d57bc86b40", 200),
     coverUrl: u("1497366754035-f200968a6e72", 1600),
+    address: "Office 402, Connaught Place",
+    state: "Delhi",
+    pincode: "110001",
+    email: "info@sharmaassociates.in",
+    openingHours: "Mon–Fri 10am–6pm · Sat 10am–2pm",
+    instagram: "@sharmacaassociates",
     categories: ["Tax Filing", "Registration", "Compliance"],
     products: [
       { name: "Income Tax Return (Salaried)", price: 1499, discountPrice: 999, category: "Tax Filing", featured: true, tags: ["itr", "tax"], description: "ITR-1 filing with Form 16 review and e-verification support.", image: u("1554224155-6726b3ff858f") },
@@ -384,6 +480,12 @@ export const SHOWCASE_SHOPS: ShowcaseShop[] = [
       "Whole and ground spices sourced direct from Kerala and Rajasthan farms. Packed on order for freshness.",
     logoUrl: u("1596040033229-a9821ebd058d", 200),
     coverUrl: u("1509358271058-acd22cc93898", 1600),
+    address: "Spice Market, Mattancherry",
+    state: "Kerala",
+    pincode: "682002",
+    email: "orders@masalabazaar.in",
+    openingHours: "Mon–Sat 9am–7pm",
+    instagram: "@masalabazaar",
     categories: ["Whole Spices", "Ground Masala", "Dry Fruits"],
     products: [
       { name: "Kashmiri Red Chilli Powder (500g)", price: 320, discountPrice: 285, category: "Ground Masala", featured: true, tags: ["chilli", "masala"], description: "Deep colour, mild heat. Stone-ground in small batches.", image: u("1583744946564-b52ac1c389c8") },

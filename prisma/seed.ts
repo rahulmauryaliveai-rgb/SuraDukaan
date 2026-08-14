@@ -177,6 +177,12 @@ async function main() {
         isShowcase: true,
         logoUrl: s.logoUrl,
         coverUrl: s.coverUrl,
+        address: s.address ?? null,
+        state: s.state ?? null,
+        pincode: s.pincode ?? null,
+        email: s.email ?? null,
+        openingHours: s.openingHours ?? null,
+        instagram: s.instagram ?? null,
         theme: { create: { template: s.theme } },
       },
       update: {
@@ -184,6 +190,12 @@ async function main() {
         description: s.description,
         logoUrl: s.logoUrl,
         coverUrl: s.coverUrl,
+        address: s.address ?? null,
+        state: s.state ?? null,
+        pincode: s.pincode ?? null,
+        email: s.email ?? null,
+        openingHours: s.openingHours ?? null,
+        instagram: s.instagram ?? null,
         theme: {
           upsert: {
             create: { template: s.theme },

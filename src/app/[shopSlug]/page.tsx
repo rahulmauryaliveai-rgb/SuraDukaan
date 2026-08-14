@@ -2,12 +2,40 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { MapPin, Search, Store, PauseCircle, Share2, ChevronDown } from "lucide-react";
-import { getPublicShop, getPublicProducts, getFeaturedProducts } from "@/lib/storefront";
+import {
+  MapPin,
+  PauseCircle,
+  Store,
+  Phone,
+  Mail,
+  Clock,
+  Globe,
+  ArrowRight,
+  Share2,
+} from "lucide-react";
+
+function InstagramIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden>
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.5-3.91 3.78-3.91 1.09 0 2.24.2 2.24.2v2.47H15.2c-1.24 0-1.63.78-1.63 1.57v1.88h2.78l-.45 2.9h-2.33V22c4.78-.76 8.43-4.92 8.43-9.94Z" />
+    </svg>
+  );
+}
+import { getPublicShop } from "@/lib/storefront";
+import { db } from "@/lib/db";
 import { appUrl, cn } from "@/lib/utils";
 import { shopContactMessage } from "@/lib/whatsapp";
-import { getTheme, themeCssVars, themeFontHref } from "@/lib/themes";
-import { ProductCard } from "@/components/storefront/product-card";
+import { getTheme, themeCssVars, themeFontHref, isDarkTheme as themeIsDark } from "@/lib/themes";
 import { WhatsAppButton } from "@/components/storefront/whatsapp-button";
 import { TrackView } from "@/components/storefront/track-view";
 import { ShareShopButton } from "@/components/share-buttons";
@@ -16,7 +44,6 @@ export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ shopSlug: string }>;
-  searchParams: Promise<{ q?: string; category?: string; sort?: string; stock?: string; page?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -44,9 +71,35 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function StorefrontPage({ params, searchParams }: Props) {
+/** One row of the contact block. */
+function InfoRow({
+  icon,
+  children,
+  href,
+}: {
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  href?: string;
+}) {
+  const body = (
+    <span className="flex items-start gap-3 text-sm leading-relaxed">
+      <span className="mt-0.5 shrink-0 opacity-70">{icon}</span>
+      <span className="min-w-0 break-words">{children}</span>
+    </span>
+  );
+  return href ? (
+    <li>
+      <a href={href} target="_blank" rel="noopener noreferrer" className="block hover:underline">
+        {body}
+      </a>
+    </li>
+  ) : (
+    <li>{body}</li>
+  );
+}
+
+export default async function ShopWelcomePage({ params }: Props) {
   const { shopSlug } = await params;
-  const sp = await searchParams;
   const shop = await getPublicShop(shopSlug);
   if (!shop) notFound();
 
@@ -62,393 +115,289 @@ export default async function StorefrontPage({ params, searchParams }: Props) {
 
   const theme = getTheme(shop.theme?.template);
   const cssVars = themeCssVars(theme, shop.theme?.primaryColor);
-
-  const filters = {
-    q: sp.q?.trim() || undefined,
-    category: sp.category || undefined,
-    sort: (["new", "price-asc", "price-desc"].includes(sp.sort ?? "") ? sp.sort : "new") as
-      | "new"
-      | "price-asc"
-      | "price-desc",
-    inStock: sp.stock === "in",
-    page: Number(sp.page) || 1,
-  };
-  const isFiltered = !!(filters.q || filters.category || sp.sort || sp.stock);
-
-  if (filters.q && filters.page === 1) {
-    const { trackEvent } = await import("@/lib/analytics");
-    void trackEvent({ shopId: shop.id, type: "SEARCH", meta: { query: filters.q } });
-  }
-
-  const [{ items, total, page, totalPages }, featured] = await Promise.all([
-    getPublicProducts(shop.id, filters),
-    isFiltered ? Promise.resolve([]) : getFeaturedProducts(shop.id),
-  ]);
-
   const shopUrl = appUrl(`/${shop.slug}`);
+
+  const productCount = await db.product.count({
+    where: { shopId: shop.id, deletedAt: null, isPublished: true },
+  });
+
+  const addressLine = [shop.address, shop.city, shop.state, shop.pincode].filter(Boolean).join(", ");
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: shop.name,
     url: shopUrl,
     ...(shop.description ? { description: shop.description } : {}),
-    ...(shop.city ? { address: { "@type": "PostalAddress", addressLocality: shop.city, addressCountry: "IN" } } : {}),
     ...(shop.logoUrl ? { image: shop.logoUrl } : {}),
+    ...(shop.phone || shop.whatsapp ? { telephone: shop.phone ?? shop.whatsapp } : {}),
+    ...(shop.email ? { email: shop.email } : {}),
+    ...(addressLine
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            ...(shop.address ? { streetAddress: shop.address } : {}),
+            ...(shop.city ? { addressLocality: shop.city } : {}),
+            ...(shop.state ? { addressRegion: shop.state } : {}),
+            ...(shop.pincode ? { postalCode: shop.pincode } : {}),
+            addressCountry: "IN",
+          },
+        }
+      : {}),
+    ...(shop.openingHours ? { openingHours: shop.openingHours } : {}),
   };
 
-  function filterUrl(next: Record<string, string | undefined>): string {
-    const merged = { q: sp.q, category: sp.category, sort: sp.sort, stock: sp.stock, ...next };
-    const usp = new URLSearchParams();
-    for (const [k, v] of Object.entries(merged)) if (v) usp.set(k, v);
-    const qs = usp.toString();
-    return `/${shop!.slug}${qs ? `?${qs}` : ""}`;
-  }
-
+  /* Dark themes get a cinematic scrim with light text; light ones stay bright. */
+  const isDarkTheme = themeIsDark(theme);
   const headingFont = { fontFamily: "var(--sf-font-heading)" };
-  const immersive = theme.heroStyle === "immersive";
-  const minimalHero = theme.heroStyle === "minimal";
 
   return (
     <div
-      className="min-h-dvh pb-24"
+      className="relative flex min-h-dvh flex-col"
       style={{ ...cssVars, background: "var(--sf-bg)", color: "var(--sf-ink)", fontFamily: "var(--sf-font-body)" }}
     >
       <link rel="stylesheet" href={themeFontHref(theme)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <TrackView shopSlug={shop.slug} type="SHOP_VIEW" />
 
-      {/* ---------- Hero ---------- */}
-      {immersive ? (
-        /* Immersive: full-bleed shop image with the name over it and a "step inside" cue */
-        <header className="relative flex h-[62vh] min-h-80 w-full items-end justify-center overflow-hidden sm:h-[70vh]">
-          {shop.coverUrl ? (
-            <Image src={shop.coverUrl} alt="" fill className="object-cover" priority sizes="100vw" />
-          ) : (
-            <div className="absolute inset-0" style={{ background: "var(--sf-surface)" }} />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/85" />
-          <div className="relative z-10 w-full max-w-3xl px-6 pb-10 text-center text-white">
-            {shop.logoUrl && (
-              <div className="mx-auto mb-4 h-16 w-16 overflow-hidden rounded-full border-2 border-white/70">
-                <Image src={shop.logoUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
-              </div>
-            )}
+      {/* ---------------- Background ---------------- */}
+      <div className="fixed inset-0 -z-10">
+        {shop.coverUrl ? (
+          <Image src={shop.coverUrl} alt="" fill className="object-cover" priority sizes="100vw" />
+        ) : (
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(160deg, ${theme.colors.surface}, ${theme.colors.accent}33)`,
+            }}
+          />
+        )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: isDarkTheme
+              ? "linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.78))"
+              : `linear-gradient(to bottom, ${theme.colors.bg}cc, ${theme.colors.bg}f2)`,
+          }}
+        />
+      </div>
+
+      {/* ---------------- Card ---------------- */}
+      <main className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-4 py-10">
+        <div
+          className="overflow-hidden border shadow-2xl backdrop-blur-sm"
+          style={{
+            background: isDarkTheme ? "rgba(18,18,20,0.72)" : "var(--sf-surface)",
+            borderColor: "var(--sf-border)",
+            borderRadius: `calc(var(--sf-radius) + 8px)`,
+            color: isDarkTheme ? "#f5f5f5" : "var(--sf-ink)",
+          }}
+        >
+          <div className="px-6 pb-6 pt-8 text-center sm:px-8">
+            {/* Logo */}
+            <div
+              className="mx-auto mb-4 h-24 w-24 overflow-hidden border-2 shadow-lg"
+              style={{
+                borderColor: "var(--sf-accent)",
+                background: "var(--sf-surface)",
+                borderRadius: theme.radius === "999px" ? "999px" : `calc(var(--sf-radius) + 4px)`,
+              }}
+            >
+              {shop.logoUrl ? (
+                <Image
+                  src={shop.logoUrl}
+                  alt={`${shop.name} logo`}
+                  width={96}
+                  height={96}
+                  className="h-full w-full object-cover"
+                  priority
+                />
+              ) : (
+                <span className="flex h-full items-center justify-center opacity-40">
+                  <Store className="h-10 w-10" />
+                </span>
+              )}
+            </div>
+
+            {/* Name + category */}
             <h1
-              className={cn("text-3xl font-bold sm:text-4xl", theme.upperHeadings && "uppercase tracking-[0.18em]")}
+              className={cn(
+                "text-3xl font-bold leading-tight sm:text-4xl",
+                theme.upperHeadings && "uppercase tracking-[0.14em]",
+              )}
               style={headingFont}
             >
               {shop.name}
             </h1>
-            <p className="mt-2 text-sm text-white/80">
-              {shop.category}
-              {shop.city && ` · ${shop.city}`}
+            <p
+              className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm"
+              style={{ color: isDarkTheme ? "rgba(255,255,255,.7)" : "var(--sf-muted)" }}
+            >
+              <span>{shop.category}</span>
+              {shop.city && (
+                <span className="inline-flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" /> {shop.city}
+                </span>
+              )}
             </p>
+
+            {/* About */}
             {shop.description && (
-              <p className="mx-auto mt-3 max-w-xl text-sm text-white/75">{shop.description}</p>
+              <p
+                className="mx-auto mt-4 max-w-md text-sm leading-relaxed"
+                style={{ color: isDarkTheme ? "rgba(255,255,255,.82)" : "var(--sf-ink)" }}
+              >
+                {shop.description}
+              </p>
             )}
-            <a
-              href="#catalog"
-              className="mt-7 inline-flex items-center gap-2 px-6 py-3 text-sm font-semibold uppercase tracking-widest"
+
+            {/* Step In */}
+            <Link
+              href={`/${shop.slug}/shop`}
+              className="group mt-7 inline-flex w-full items-center justify-center gap-2 px-8 py-4 text-base font-bold shadow-lg transition hover:brightness-110 active:scale-[0.99]"
               style={{
                 background: "var(--sf-accent)",
                 color: "var(--sf-accent-ink)",
                 borderRadius: "var(--sf-radius)",
+                letterSpacing: theme.upperHeadings ? "0.12em" : undefined,
+                textTransform: theme.upperHeadings ? "uppercase" : undefined,
               }}
             >
-              Step Inside <ChevronDown className="h-4 w-4" />
-            </a>
+              Step In
+              <ArrowRight className="h-5 w-5 transition group-hover:translate-x-1" />
+            </Link>
+            <p
+              className="mt-2.5 text-xs"
+              style={{ color: isDarkTheme ? "rgba(255,255,255,.6)" : "var(--sf-muted)" }}
+            >
+              {productCount} {productCount === 1 ? "product" : "products"} inside
+            </p>
           </div>
-        </header>
-      ) : (
-        <>
-          {!minimalHero && (
-            <div className="relative h-36 w-full sm:h-48" style={{ background: "var(--sf-surface)" }}>
-              {shop.coverUrl && (
-                <Image src={shop.coverUrl} alt="" fill className="object-cover" priority sizes="100vw" />
-              )}
-            </div>
-          )}
-          <header className={cn("mx-auto max-w-6xl px-4", minimalHero && "pt-10")}>
-            <div className={cn("flex items-end justify-between gap-4", !minimalHero && "-mt-10")}>
-              <div
-                className="relative h-20 w-20 shrink-0 overflow-hidden border-4"
-                style={{
-                  borderColor: "var(--sf-bg)",
-                  background: "var(--sf-surface)",
-                  borderRadius: "var(--sf-radius)",
-                }}
+
+          {/* ---------------- Contact ---------------- */}
+          {(addressLine || shop.phone || shop.whatsapp || shop.email || shop.openingHours) && (
+            <div
+              className="border-t px-6 py-5 sm:px-8"
+              style={{
+                borderColor: isDarkTheme ? "rgba(255,255,255,.12)" : "var(--sf-border)",
+                background: isDarkTheme ? "rgba(255,255,255,.04)" : "transparent",
+              }}
+            >
+              <h2
+                className="mb-3 text-xs font-bold uppercase tracking-[0.16em]"
+                style={{ color: isDarkTheme ? "rgba(255,255,255,.55)" : "var(--sf-muted)" }}
               >
-                {shop.logoUrl ? (
-                  <Image src={shop.logoUrl} alt={`${shop.name} logo`} fill className="object-cover" sizes="80px" />
-                ) : (
-                  <span className="flex h-full items-center justify-center opacity-30">
-                    <Store className="h-8 w-8" />
+                Visit or contact us
+              </h2>
+              <ul className="space-y-2.5">
+                {addressLine && (
+                  <InfoRow
+                    icon={<MapPin className="h-4 w-4" />}
+                    href={shop.mapsLink || undefined}
+                  >
+                    {addressLine}
+                    {shop.mapsLink && (
+                      <span className="ml-1 font-medium" style={{ color: "var(--sf-accent)" }}>
+                        · Directions
+                      </span>
+                    )}
+                  </InfoRow>
+                )}
+                {(shop.phone || shop.whatsapp) && (
+                  <InfoRow
+                    icon={<Phone className="h-4 w-4" />}
+                    href={`tel:+91${(shop.phone ?? shop.whatsapp).replace(/^91/, "")}`}
+                  >
+                    +91 {(shop.phone ?? shop.whatsapp).replace(/^91/, "")}
+                  </InfoRow>
+                )}
+                {shop.email && (
+                  <InfoRow icon={<Mail className="h-4 w-4" />} href={`mailto:${shop.email}`}>
+                    {shop.email}
+                  </InfoRow>
+                )}
+                {shop.openingHours && (
+                  <InfoRow icon={<Clock className="h-4 w-4" />}>{shop.openingHours}</InfoRow>
+                )}
+                {shop.website && (
+                  <InfoRow icon={<Globe className="h-4 w-4" />} href={shop.website}>
+                    {shop.website.replace(/^https?:\/\//, "")}
+                  </InfoRow>
+                )}
+              </ul>
+
+              {/* Actions */}
+              <div className="mt-5 flex gap-2">
+                <WhatsAppButton
+                  phone={shop.whatsapp}
+                  message={shopContactMessage(shop.name)}
+                  shopSlug={shop.slug}
+                  source="STOREFRONT"
+                  label="WhatsApp"
+                  className="flex-1 py-2.5 text-sm"
+                />
+                <ShareShopButton shopName={shop.name} shopUrl={shopUrl} shopSlug={shop.slug}>
+                  <span
+                    role="button"
+                    aria-label="Share shop"
+                    className="inline-flex h-11 w-11 items-center justify-center border"
+                    style={{
+                      borderColor: isDarkTheme ? "rgba(255,255,255,.2)" : "var(--sf-border)",
+                      borderRadius: "var(--sf-radius)",
+                    }}
+                  >
+                    <Share2 className="h-4 w-4" />
                   </span>
+                </ShareShopButton>
+                {shop.instagram && (
+                  <a
+                    href={
+                      shop.instagram.startsWith("http")
+                        ? shop.instagram
+                        : `https://instagram.com/${shop.instagram.replace(/^@/, "")}`
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram"
+                    className="inline-flex h-11 w-11 items-center justify-center border"
+                    style={{
+                      borderColor: isDarkTheme ? "rgba(255,255,255,.2)" : "var(--sf-border)",
+                      borderRadius: "var(--sf-radius)",
+                    }}
+                  >
+                    <InstagramIcon className="h-4 w-4" />
+                  </a>
+                )}
+                {shop.facebook && (
+                  <a
+                    href={shop.facebook.startsWith("http") ? shop.facebook : `https://facebook.com/${shop.facebook}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook"
+                    className="inline-flex h-11 w-11 items-center justify-center border"
+                    style={{
+                      borderColor: isDarkTheme ? "rgba(255,255,255,.2)" : "var(--sf-border)",
+                      borderRadius: "var(--sf-radius)",
+                    }}
+                  >
+                    <FacebookIcon className="h-4 w-4" />
+                  </a>
                 )}
               </div>
-              <ShareShopButton shopName={shop.name} shopUrl={shopUrl} shopSlug={shop.slug}>
-                <span
-                  className="inline-flex h-10 w-10 items-center justify-center border"
-                  style={{
-                    borderColor: "var(--sf-border)",
-                    background: "var(--sf-surface)",
-                    borderRadius: "var(--sf-radius)",
-                  }}
-                  aria-label="Share shop"
-                  role="button"
-                >
-                  <Share2 className="h-4 w-4" />
-                </span>
-              </ShareShopButton>
-            </div>
-            <div className="mt-3 min-w-0">
-              <h1
-                className={cn(
-                  "truncate text-2xl font-bold sm:text-3xl",
-                  theme.upperHeadings && "uppercase tracking-[0.12em]",
-                )}
-                style={headingFont}
-              >
-                {shop.name}
-              </h1>
-              <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm" style={{ color: "var(--sf-muted)" }}>
-                <span>{shop.category}</span>
-                {shop.city && (
-                  <span className="inline-flex items-center gap-0.5">
-                    <MapPin className="h-3.5 w-3.5" /> {shop.city}
-                  </span>
-                )}
-              </p>
-            </div>
-            {shop.description && (
-              <p className="mt-3 max-w-2xl text-sm" style={{ color: "var(--sf-muted)" }}>
-                {shop.description}
-              </p>
-            )}
-            <div className="mt-4">
-              <WhatsAppButton
-                phone={shop.whatsapp}
-                message={shopContactMessage(shop.name)}
-                shopSlug={shop.slug}
-                source="STOREFRONT"
-                label="Chat on WhatsApp"
-                className="h-11 px-4 py-0 text-sm"
-              />
-            </div>
-          </header>
-        </>
-      )}
-
-      <main id="catalog" className="mx-auto max-w-6xl px-4 scroll-mt-4">
-        {/* Search */}
-        <form className="relative mt-6" action={`/${shop.slug}`}>
-          <Search
-            className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2"
-            style={{ color: "var(--sf-muted)" }}
-          />
-          <input
-            type="search"
-            name="q"
-            defaultValue={filters.q ?? ""}
-            placeholder={`Search in ${shop.name}…`}
-            className="h-12 w-full border pl-10 pr-4 text-sm focus:outline-none"
-            style={{
-              background: "var(--sf-surface)",
-              borderColor: "var(--sf-border)",
-              color: "var(--sf-ink)",
-              borderRadius: "var(--sf-radius)",
-            }}
-          />
-          {sp.category && <input type="hidden" name="category" value={sp.category} />}
-        </form>
-
-        {/* Categories */}
-        {shop.categories.length > 0 && (
-          <nav className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="Categories">
-            {[{ slug: "", name: "All" }, ...shop.categories].map((c) => {
-              const active = (c.slug || undefined) === filters.category;
-              return (
-                <Link
-                  key={c.slug || "all"}
-                  href={filterUrl({ category: c.slug || undefined, page: undefined })}
-                  className="shrink-0 border px-4 py-2 text-sm font-medium transition"
-                  style={{
-                    borderRadius: "999px",
-                    background: active ? "var(--sf-accent)" : "var(--sf-surface)",
-                    color: active ? "var(--sf-accent-ink)" : "var(--sf-ink)",
-                    borderColor: active ? "var(--sf-accent)" : "var(--sf-border)",
-                  }}
-                >
-                  {c.name}
-                </Link>
-              );
-            })}
-          </nav>
-        )}
-
-        {/* Featured */}
-        {featured.length > 0 && (
-          <section className="mt-8">
-            <h2
-              className={cn("mb-3 text-lg font-bold", theme.upperHeadings && "uppercase tracking-[0.14em]")}
-              style={headingFont}
-            >
-              Featured
-            </h2>
-            <div
-              className={cn(
-                "grid gap-3 sm:grid-cols-3 lg:grid-cols-4",
-                theme.grid.mobileCols === 3 ? "grid-cols-3" : "grid-cols-2",
-              )}
-            >
-              {featured.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  shopSlug={shop.slug}
-                  theme={theme}
-                  product={{
-                    name: p.name,
-                    slug: p.slug,
-                    price: Number(p.price),
-                    discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
-                    inStock: p.inStock,
-                    imageUrl: p.images[0]?.url ?? null,
-                  }}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* All products */}
-        <section className="mt-8">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2
-              className={cn("text-lg font-bold", theme.upperHeadings && "uppercase tracking-[0.14em]")}
-              style={headingFont}
-            >
-              {filters.q ? `Results for “${filters.q}”` : "All Products"}{" "}
-              <span className="text-sm font-normal" style={{ color: "var(--sf-muted)" }}>
-                ({total})
-              </span>
-            </h2>
-            <div className="flex gap-2 text-sm">
-              <Link
-                href={filterUrl({ stock: sp.stock === "in" ? undefined : "in", page: undefined })}
-                className="border px-3 py-1.5 font-medium"
-                style={{
-                  borderRadius: "999px",
-                  background: sp.stock === "in" ? "var(--sf-accent)" : "var(--sf-surface)",
-                  color: sp.stock === "in" ? "var(--sf-accent-ink)" : "var(--sf-ink)",
-                  borderColor: sp.stock === "in" ? "var(--sf-accent)" : "var(--sf-border)",
-                }}
-              >
-                In stock
-              </Link>
-              <Link
-                href={filterUrl({ sort: sp.sort === "price-asc" ? "price-desc" : "price-asc", page: undefined })}
-                className="border px-3 py-1.5 font-medium"
-                style={{
-                  borderRadius: "999px",
-                  background: "var(--sf-surface)",
-                  color: "var(--sf-ink)",
-                  borderColor: "var(--sf-border)",
-                }}
-              >
-                Price {sp.sort === "price-asc" ? "↑" : sp.sort === "price-desc" ? "↓" : ""}
-              </Link>
-            </div>
-          </div>
-
-          {items.length === 0 ? (
-            <div
-              className="border border-dashed py-16 text-center"
-              style={{ borderColor: "var(--sf-border)", borderRadius: "var(--sf-radius)" }}
-            >
-              <p className="font-medium">No products found</p>
-              <p className="mt-1 text-sm" style={{ color: "var(--sf-muted)" }}>
-                Try a different search or category.
-              </p>
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "grid gap-3 sm:grid-cols-3 lg:grid-cols-4",
-                theme.grid.mobileCols === 3 ? "grid-cols-3" : "grid-cols-2",
-              )}
-            >
-              {items.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  shopSlug={shop.slug}
-                  theme={theme}
-                  product={{
-                    name: p.name,
-                    slug: p.slug,
-                    price: Number(p.price),
-                    discountPrice: p.discountPrice ? Number(p.discountPrice) : null,
-                    inStock: p.inStock,
-                    imageUrl: p.images[0]?.url ?? null,
-                  }}
-                />
-              ))}
             </div>
           )}
+        </div>
 
-          {totalPages > 1 && (
-            <nav className="mt-6 flex items-center justify-center gap-3 text-sm" aria-label="Pagination">
-              {page > 1 && (
-                <Link
-                  href={filterUrl({ page: String(page - 1) })}
-                  className="border px-4 py-2 font-medium"
-                  style={{ borderColor: "var(--sf-border)", borderRadius: "var(--sf-radius)" }}
-                >
-                  Previous
-                </Link>
-              )}
-              <span style={{ color: "var(--sf-muted)" }}>
-                Page {page} / {totalPages}
-              </span>
-              {page < totalPages && (
-                <Link
-                  href={filterUrl({ page: String(page + 1) })}
-                  className="border px-4 py-2 font-medium"
-                  style={{ borderColor: "var(--sf-border)", borderRadius: "var(--sf-radius)" }}
-                >
-                  Next
-                </Link>
-              )}
-            </nav>
-          )}
-        </section>
-
-        <footer
-          className="mt-14 border-t py-8 text-center text-sm"
-          style={{ borderColor: "var(--sf-border)", color: "var(--sf-muted)" }}
+        <p
+          className="mt-6 text-center text-xs"
+          style={{ color: isDarkTheme ? "rgba(255,255,255,.55)" : "var(--sf-muted)" }}
         >
-          <p>
-            {shop.name} · Powered by{" "}
-            <Link href="/" className="font-semibold" style={{ color: "var(--sf-accent)" }}>
-              SURA SHOP
-            </Link>
-          </p>
-        </footer>
+          Powered by{" "}
+          <Link href="/" className="font-semibold hover:underline" style={{ color: "var(--sf-accent)" }}>
+            SURA SHOP
+          </Link>
+        </p>
       </main>
-
-      {/* Sticky mobile CTA */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t p-3 backdrop-blur sm:hidden"
-        style={{ background: "var(--sf-surface)", borderColor: "var(--sf-border)" }}
-      >
-        <WhatsAppButton
-          phone={shop.whatsapp}
-          message={shopContactMessage(shop.name)}
-          shopSlug={shop.slug}
-          source="STOREFRONT"
-          label="Chat on WhatsApp"
-          className="w-full"
-        />
-      </div>
     </div>
   );
 }

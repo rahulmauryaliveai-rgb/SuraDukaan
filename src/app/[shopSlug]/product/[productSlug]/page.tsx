@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: Props) {
       >
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4">
           <Link
-            href={`/${shop.slug}`}
+            href={`/${shop.slug}/shop`}
             className="inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium"
             style={{ color: "var(--sf-ink)" }}
           >
