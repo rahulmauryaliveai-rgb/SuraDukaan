@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { isValidSlug } from "@/lib/slug";
+import { THEME_IDS, DEFAULT_THEME_ID } from "@/lib/themes";
+
+const themeIdSchema = z
+  .string()
+  .refine((v) => (THEME_IDS as string[]).includes(v), "Unknown theme");
 
 export const phoneSchema = z
   .string()
@@ -21,7 +26,7 @@ export const shopCreateSchema = z.object({
   city: z.string().trim().max(60).optional().or(z.literal("")),
   whatsapp: phoneSchema,
   slug: slugSchema,
-  template: z.enum(["modern", "minimal", "retail", "fashion", "food"]).default("modern"),
+  template: themeIdSchema.default(DEFAULT_THEME_ID),
 });
 
 export const shopUpdateSchema = z.object({
@@ -46,8 +51,13 @@ export const shopUpdateSchema = z.object({
 });
 
 export const themeUpdateSchema = z.object({
-  template: z.enum(["modern", "minimal", "retail", "fashion", "food"]).optional(),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  template: themeIdSchema.optional(),
+  /** Optional brand-colour override; blank keeps the theme's own accent. */
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional()
+    .or(z.literal("")),
   buttonStyle: z.enum(["rounded", "pill", "square"]).optional(),
   font: z.enum(["inter", "poppins", "dm-sans"]).optional(),
   cardStyle: z.enum(["shadow", "border", "flat"]).optional(),

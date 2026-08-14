@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatINR } from "@/lib/utils";
+import { getTheme } from "@/lib/themes";
 import { Button } from "@/components/ui/button";
+import { ShowcaseGallery, type ShowcaseEntry } from "@/components/marketing/showcase-gallery";
 
 export const metadata: Metadata = {
   title: "SURA SHOP — Turn Your Shop Into a Digital Storefront",
@@ -61,10 +63,57 @@ const FAQS = [
   },
 ];
 
+async function getShowcaseEntries(): Promise<ShowcaseEntry[]> {
+  try {
+    const shops = await db.shop.findMany({
+      where: { isShowcase: true, deletedAt: null, status: "LIVE" },
+      include: {
+        theme: true,
+        products: {
+          where: { deletedAt: null, isPublished: true },
+          include: { images: { where: { isMain: true }, take: 1 } },
+          orderBy: [{ isFeatured: "desc" }, { createdAt: "asc" }],
+          take: 6,
+        },
+        _count: { select: { products: { where: { deletedAt: null, isPublished: true } } } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return shops.map((s) => {
+      const theme = getTheme(s.theme?.template);
+      return {
+        slug: s.slug,
+        name: s.name,
+        category: s.category,
+        themeName: theme.name,
+        themeTagline: theme.tagline,
+        city: s.city,
+        logoUrl: s.logoUrl,
+        coverUrl: s.coverUrl,
+        productCount: s._count.products,
+        colors: theme.colors,
+        radius: theme.radius,
+        fontHeading: theme.fontHeading,
+        upperHeadings: theme.upperHeadings,
+        gridAspect: theme.grid.aspect,
+        products: s.products.map((p) => ({
+          name: p.name,
+          price: formatINR(Number(p.discountPrice ?? p.price)),
+          imageUrl: p.images[0]?.url ?? null,
+        })),
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
 export default async function LandingPage() {
-  const plans = await db.plan
-    .findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } })
-    .catch(() => []);
+  const [plans, showcase] = await Promise.all([
+    db.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }).catch(() => []),
+    getShowcaseEntries(),
+  ]);
 
   return (
     <div className="bg-white text-ink-900">
@@ -170,6 +219,9 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Theme gallery — real seeded shops, one per theme */}
+      <ShowcaseGallery entries={showcase} />
 
       {/* Features */}
       <section id="features" className="py-16">

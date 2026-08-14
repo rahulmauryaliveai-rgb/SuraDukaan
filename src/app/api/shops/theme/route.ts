@@ -8,10 +8,12 @@ export async function PATCH(req: Request) {
     const { shop, memberRole } = await requireShop();
     if (memberRole === "STAFF") return fail("Staff cannot customize the storefront.", 403);
     const input = themeUpdateSchema.parse(await req.json());
+    // Blank primaryColor means "use the theme's own accent".
+    const data = { ...input, ...(input.primaryColor === "" ? { primaryColor: null } : {}) };
     const theme = await db.shopTheme.upsert({
       where: { shopId: shop.id },
-      create: { shopId: shop.id, ...input },
-      update: input,
+      create: { shopId: shop.id, ...data },
+      update: data,
     });
     return ok({ theme });
   } catch (err) {

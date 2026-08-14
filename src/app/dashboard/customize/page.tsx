@@ -12,9 +12,10 @@ export default async function CustomizePage() {
       <h1 className="text-xl font-bold">Customize your storefront</h1>
       <CustomizeForm
         slug={shop.slug}
+        category={shop.category}
         initial={{
           template: shop.theme?.template ?? "modern",
-          primaryColor: shop.theme?.primaryColor ?? "#0f766e",
+          primaryColor: shop.theme?.primaryColor ?? "",
           buttonStyle: shop.theme?.buttonStyle ?? "rounded",
           font: shop.theme?.font ?? "inter",
           cardStyle: shop.theme?.cardStyle ?? "shadow",

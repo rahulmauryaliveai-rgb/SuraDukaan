@@ -6,7 +6,8 @@ import { Store, Check, X, Loader2, MessageCircle, PartyPopper } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { BUSINESS_CATEGORIES, STOREFRONT_TEMPLATES } from "@/lib/constants";
+import { BUSINESS_CATEGORIES } from "@/lib/constants";
+import { themesForCategory } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 type SlugState = "idle" | "checking" | "available" | "taken" | "invalid";
@@ -255,21 +256,43 @@ export function ShopWizard() {
             {step === 5 && (
               <>
                 <h2 className="text-lg font-semibold">Pick a look for your shop</h2>
+                <p className="-mt-3 text-sm text-ink-500">
+                  Suggested for {category} first — you can change this anytime.
+                </p>
                 <div className="space-y-2">
-                  {STOREFRONT_TEMPLATES.map((t) => (
+                  {themesForCategory(category).map((t, i) => (
                     <button
                       key={t.id}
                       type="button"
                       onClick={() => setTemplate(t.id)}
                       className={cn(
-                        "w-full rounded-xl border px-4 py-3 text-left transition-colors",
+                        "flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors",
                         template === t.id
                           ? "border-brand-600 bg-brand-50"
                           : "border-ink-300 bg-white hover:bg-ink-50",
                       )}
                     >
-                      <span className="block text-sm font-semibold">{t.name}</span>
-                      <span className="block text-xs text-ink-500">{t.description}</span>
+                      {/* colour swatch preview */}
+                      <span
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border"
+                        style={{ background: t.colors.bg, borderColor: t.colors.border }}
+                      >
+                        <span
+                          className="h-5 w-5 rounded-full"
+                          style={{ background: t.colors.accent }}
+                        />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="text-sm font-semibold">{t.name}</span>
+                          {i === 0 && t.bestFor.includes(category) && (
+                            <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-800">
+                              RECOMMENDED
+                            </span>
+                          )}
+                        </span>
+                        <span className="block text-xs text-ink-500">{t.tagline}</span>
+                      </span>
                     </button>
                   ))}
                 </div>

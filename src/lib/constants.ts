@@ -15,10 +15,8 @@ export const BUSINESS_CATEGORIES = [
   "Other",
 ] as const;
 
-export const STOREFRONT_TEMPLATES = [
-  { id: "modern", name: "Modern", description: "Clean cards, teal accents — works for everything" },
-  { id: "minimal", name: "Minimal", description: "Airy, typography-first, understated" },
-  { id: "retail", name: "Retail", description: "Dense grid, price-forward, high energy" },
-  { id: "fashion", name: "Fashion", description: "Large imagery, elegant serif touches" },
-  { id: "food", name: "Food", description: "Warm tones, appetizing layout" },
-] as const;
+/**
+ * Storefront templates shown in the onboarding wizard.
+ * Source of truth for the actual design tokens is `src/lib/themes.ts`.
+ */
+export { THEMES, THEME_IDS, themesForCategory } from "@/lib/themes";

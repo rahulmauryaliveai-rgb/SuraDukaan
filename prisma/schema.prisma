@@ -120,6 +120,8 @@ model Shop {
   coverUrl      String?
   status        ShopStatus @default(LIVE)
   isPublished   Boolean    @default(true)
+  /// Featured in the public theme gallery on the landing page.
+  isShowcase    Boolean    @default(false)
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   deletedAt     DateTime?
@@ -155,7 +157,8 @@ model ShopTheme {
   id            String  @id @default(cuid())
   shopId        String  @unique
   template      String  @default("modern") // modern | minimal | retail | fashion | food
-  primaryColor  String  @default("#0f766e")
+  /// Optional brand-colour override. NULL = use the theme's own accent.
+  primaryColor  String?
   buttonStyle   String  @default("rounded") // rounded | pill | square
   font          String  @default("inter")   // inter | poppins | dm-sans
   cardStyle     String  @default("shadow")  // shadow | border | flat

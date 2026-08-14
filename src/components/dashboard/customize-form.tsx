@@ -7,7 +7,7 @@ import { ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { STOREFRONT_TEMPLATES } from "@/lib/constants";
+import { themesForCategory } from "@/lib/themes";
 import { cn } from "@/lib/utils";
 
 const COLORS = ["#0f766e", "#b91c1c", "#1d4ed8", "#7e22ce", "#c2410c", "#0f172a", "#be185d", "#15803d"];
@@ -23,7 +23,15 @@ interface CustomizeValues {
   coverUrl: string;
 }
 
-export function CustomizeForm({ initial, slug }: { initial: CustomizeValues; slug: string }) {
+export function CustomizeForm({
+  initial,
+  slug,
+  category,
+}: {
+  initial: CustomizeValues;
+  slug: string;
+  category: string;
+}) {
   const router = useRouter();
   const [v, setV] = useState(initial);
   const [saving, setSaving] = useState(false);
@@ -126,45 +134,108 @@ export function CustomizeForm({ initial, slug }: { initial: CustomizeValues; slu
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Template</CardTitle></CardHeader>
-        <CardContent className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {STOREFRONT_TEMPLATES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => set("template", t.id)}
-              className={cn(
-                "rounded-xl border px-3 py-3 text-left text-sm transition",
-                v.template === t.id ? "border-brand-600 bg-brand-50" : "border-ink-300 bg-white hover:bg-ink-50",
-              )}
-            >
-              <span className="block font-semibold">{t.name}</span>
-              <span className="mt-0.5 block text-xs text-ink-500">{t.description}</span>
-            </button>
-          ))}
+        <CardHeader>
+          <CardTitle>Theme</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="-mt-1 text-sm text-ink-500">
+            Each theme changes colours, fonts, product-card shape and the shop header.
+            Suggested for {category} first.
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {themesForCategory(category).map((t, i) => {
+              const active = v.template === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => set("template", t.id)}
+                  className={cn(
+                    "overflow-hidden rounded-xl border text-left transition",
+                    active ? "border-brand-600 ring-2 ring-brand-600/20" : "border-ink-300 hover:border-ink-500",
+                  )}
+                >
+                  {/* miniature storefront preview */}
+                  <span
+                    className="block px-3 pb-3 pt-2.5"
+                    style={{ background: t.colors.bg, fontFamily: `"${t.fontBody}", sans-serif` }}
+                  >
+                    <span className="mb-2 flex items-center gap-1.5">
+                      <span
+                        className="h-4 w-4 shrink-0"
+                        style={{ background: t.colors.accent, borderRadius: t.radius }}
+                      />
+                      <span
+                        className="block h-1.5 w-16 rounded-full opacity-70"
+                        style={{ background: t.colors.ink }}
+                      />
+                    </span>
+                    <span className="grid grid-cols-3 gap-1.5">
+                      {[0, 1, 2].map((n) => (
+                        <span
+                          key={n}
+                          className="block"
+                          style={{
+                            background: t.colors.surface,
+                            border: `1px solid ${t.colors.border}`,
+                            borderRadius: t.radius,
+                            aspectRatio: t.grid.aspect,
+                          }}
+                        />
+                      ))}
+                    </span>
+                  </span>
+                  <span className="block border-t border-ink-100 bg-white px-3 py-2">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-semibold">{t.name}</span>
+                      {i === 0 && t.bestFor.includes(category) && (
+                        <span className="rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-bold text-brand-800">
+                          RECOMMENDED
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-ink-500">{t.tagline}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Brand colour</CardTitle></CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-2">
-          {COLORS.map((c) => (
+        <CardHeader>
+          <CardTitle>Brand colour</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="-mt-1 text-sm text-ink-500">
+            Optional — overrides your theme&apos;s own accent colour.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              key={c}
               type="button"
-              onClick={() => set("primaryColor", c)}
-              className={cn("h-9 w-9 rounded-full border-2", v.primaryColor === c ? "border-ink-900 ring-2 ring-ink-900/20" : "border-white")}
-              style={{ backgroundColor: c }}
-              aria-label={`Colour ${c}`}
-            />
-          ))}
-          <input
-            type="color"
-            value={v.primaryColor}
-            onChange={(e) => set("primaryColor", e.target.value)}
-            className="h-9 w-9 cursor-pointer rounded-full border border-ink-300"
-            aria-label="Custom colour"
-          />
+              onClick={() => set("primaryColor", "")}
+              className={cn(
+                "h-9 rounded-full border px-3 text-xs font-medium",
+                !v.primaryColor ? "border-ink-900 bg-ink-900 text-white" : "border-ink-300 bg-white",
+              )}
+            >
+              Theme default
+            </button>
+            {COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => set("primaryColor", c)}
+                className={cn(
+                  "h-9 w-9 rounded-full border-2",
+                  v.primaryColor === c ? "border-ink-900 ring-2 ring-ink-900/20" : "border-white",
+                )}
+                style={{ backgroundColor: c }}
+                aria-label={`Colour ${c}`}
+              />
+            ))}
+          </div>
         </CardContent>
       </Card>
 

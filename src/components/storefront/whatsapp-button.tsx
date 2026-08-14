@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * WhatsApp click-to-chat CTA. Tracks the click as an enquiry, then opens WhatsApp.
+ * Keeps WhatsApp green by default; `useThemeAccent` styles it with the shop theme.
  */
 export function WhatsAppButton({
   phone,
@@ -17,6 +18,7 @@ export function WhatsAppButton({
   label = "Order on WhatsApp",
   className,
   track = true,
+  useThemeAccent = false,
 }: {
   phone: string;
   message: string;
@@ -28,6 +30,7 @@ export function WhatsAppButton({
   label?: string;
   className?: string;
   track?: boolean;
+  useThemeAccent?: boolean;
 }) {
   function digitsOnly(raw: string): string {
     const d = raw.replace(/\D/g, "");
@@ -62,9 +65,19 @@ export function WhatsAppButton({
     <button
       onClick={onClick}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-xl bg-wa-dark px-5 py-3 font-semibold text-white shadow-sm transition hover:brightness-110 active:scale-[0.99]",
+        "inline-flex items-center justify-center gap-2 px-5 py-3 font-semibold shadow-sm transition hover:brightness-110 active:scale-[0.99]",
+        !useThemeAccent && "bg-wa-dark text-white rounded-xl",
         className,
       )}
+      style={
+        useThemeAccent
+          ? {
+              background: "var(--sf-accent)",
+              color: "var(--sf-accent-ink)",
+              borderRadius: "var(--sf-radius)",
+            }
+          : undefined
+      }
     >
       <MessageCircle className="h-5 w-5" />
       {label}

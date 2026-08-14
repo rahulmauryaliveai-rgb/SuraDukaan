@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { getPublicProduct } from "@/lib/storefront";
 import { appUrl } from "@/lib/utils";
+import { getTheme, themeCssVars, themeFontHref } from "@/lib/themes";
 import { TrackView } from "@/components/storefront/track-view";
 import { ProductPurchasePanel } from "@/components/storefront/product-purchase-panel";
 import { ProductGallery } from "@/components/storefront/product-gallery";
@@ -66,16 +67,27 @@ export default async function ProductPage({ params }: Props) {
     },
   };
 
+  const theme = getTheme(shop.theme?.template);
+  const cssVars = themeCssVars(theme, shop.theme?.primaryColor);
+
   return (
-    <div className="min-h-dvh bg-ink-50 pb-28 sm:pb-10">
+    <div
+      className="min-h-dvh pb-28 sm:pb-10"
+      style={{ ...cssVars, background: "var(--sf-bg)", color: "var(--sf-ink)", fontFamily: "var(--sf-font-body)" }}
+    >
+      <link rel="stylesheet" href={themeFontHref(theme)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <TrackView shopSlug={shop.slug} type="PRODUCT_VIEW" productId={product.id} />
 
-      <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/90 backdrop-blur">
+      <header
+        className="sticky top-0 z-30 border-b backdrop-blur"
+        style={{ background: "var(--sf-surface)", borderColor: "var(--sf-border)" }}
+      >
         <div className="mx-auto flex h-14 max-w-5xl items-center gap-2 px-4">
           <Link
             href={`/${shop.slug}`}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-ink-700 hover:bg-ink-100"
+            className="inline-flex items-center gap-1 px-2 py-1.5 text-sm font-medium"
+            style={{ color: "var(--sf-ink)" }}
           >
             <ChevronLeft className="h-4 w-4" />
             {shop.name}
@@ -90,6 +102,7 @@ export default async function ProductPage({ params }: Props) {
             productName={product.name}
           />
           <ProductPurchasePanel
+            theme={theme}
             shop={{ name: shop.name, slug: shop.slug, whatsapp: shop.whatsapp }}
             product={{
               id: product.id,

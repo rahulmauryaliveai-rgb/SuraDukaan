@@ -11,7 +11,7 @@
  * 2. First run: applies schema + seeds demo data (skipped afterwards).
  * 3. Serves the app and opens the browser.
  */
-import { existsSync, readFileSync, writeFileSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, statSync } from "fs";
 import { spawn } from "child_process";
 import net from "net";
 import path from "path";
@@ -24,6 +24,8 @@ const DEV_MODE = process.argv.includes("--dev");
 const FORCE_REBUILD = process.argv.includes("--rebuild");
 const FORCE_SETUP = process.argv.includes("--setup");
 const SETUP_MARKER = path.join(root, ".setup-done");
+/** Bump when the schema or seed changes so existing installs re-run setup. */
+const SETUP_VERSION = "2-themes";
 
 // --- load .env (simple parser, no dependency) ---
 if (existsSync(".env")) {
@@ -36,6 +38,35 @@ if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.length < 16 || process.e
   process.env.AUTH_SECRET = "dev-only-secret-0123456789-abcdefghijklmnop";
 }
 if (!process.env.APP_URL) process.env.APP_URL = "http://localhost:3000";
+/** Prisma's `directUrl` must always resolve; locally it's the same connection. */
+function syncDirectUrl() {
+  if (process.env.DATABASE_URL) process.env.DIRECT_URL = process.env.DIRECT_URL || process.env.DATABASE_URL;
+}
+syncDirectUrl();
+
+/**
+ * Child processes (prisma, next) read `.env` themselves, so the file has to
+ * agree with the database we actually started. Rewrites one key, preserving
+ * the previous value as a comment.
+ */
+function setEnvFileValue(key, value) {
+  const file = path.join(root, ".env");
+  let lines = existsSync(file) ? readFileSync(file, "utf8").split(/\r?\n/) : [];
+  const re = new RegExp(`^\\s*${key}\\s*=`);
+  const idx = lines.findIndex((l) => re.test(l));
+  const next = `${key}="${value}"`;
+  if (idx === -1) {
+    lines.push(next);
+  } else if (lines[idx] !== next) {
+    const old = lines[idx];
+    lines[idx] = next;
+    // Keep the old value once, for reference.
+    if (!lines.some((l) => l === `# previous: ${old}`)) {
+      lines.splice(idx + 1, 0, `# previous: ${old}`);
+    }
+  }
+  writeFileSync(file, lines.join("\n"));
+}
 
 function canConnect(port, host = "127.0.0.1") {
   return new Promise((resolve) => {
@@ -65,6 +96,7 @@ async function ensureDatabase() {
     try {
       const parsed = new URL(url);
       if (await canConnect(Number(parsed.port || 5432), parsed.hostname)) {
+        syncDirectUrl();
         console.log(`✓ Using database from .env (${parsed.hostname}:${parsed.port || 5432})`);
         return;
       }
@@ -72,6 +104,19 @@ async function ensureDatabase() {
       /* invalid URL — fall through */
     }
   }
+  const EMBEDDED_URL = "postgresql://sura:sura@127.0.0.1:5433/surashop";
+
+  // A previous run may have left PostgreSQL running — reuse it rather than
+  // fighting over the same data directory.
+  if (await canConnect(5433)) {
+    process.env.DATABASE_URL = EMBEDDED_URL;
+    syncDirectUrl();
+    setEnvFileValue("DATABASE_URL", EMBEDDED_URL);
+    setEnvFileValue("DIRECT_URL", EMBEDDED_URL);
+    console.log("✓ Reusing embedded PostgreSQL already running on port 5433");
+    return;
+  }
+
   console.log("Starting embedded PostgreSQL…");
   const { default: EmbeddedPostgres } = await import("embedded-postgres");
   embedded = new EmbeddedPostgres({
@@ -84,29 +129,69 @@ async function ensureDatabase() {
   if (!existsSync(path.join(root, ".pgdata", "PG_VERSION"))) {
     await embedded.initialise();
   }
-  await embedded.start();
+
+  try {
+    await embedded.start();
+  } catch (err) {
+    // Could be a stale lock from a hard shutdown; if it came up anyway, carry on.
+    if (!(await canConnect(5433))) {
+      embedded = null;
+      throw new Error(
+        "Could not start the local database. Close any other SURA SHOP window and try again. " +
+          `(${err instanceof Error ? err.message : String(err)})`,
+      );
+    }
+  }
+
   try {
     await embedded.createDatabase("surashop");
   } catch {
     /* already exists */
   }
-  process.env.DATABASE_URL = "postgresql://sura:sura@127.0.0.1:5433/surashop";
+  process.env.DATABASE_URL = EMBEDDED_URL;
+  syncDirectUrl();
+  setEnvFileValue("DATABASE_URL", EMBEDDED_URL);
+  setEnvFileValue("DIRECT_URL", EMBEDDED_URL);
   console.log("✓ Embedded PostgreSQL running on port 5433");
 }
 
+/** Install packages when package.json is newer than the installed tree. */
+async function ensureDependencies() {
+  const stamp = path.join(root, "node_modules", ".package-lock.json");
+  const pkg = path.join(root, "package.json");
+  const needsInstall =
+    !existsSync(path.join(root, "node_modules")) ||
+    !existsSync(stamp) ||
+    statSync(pkg).mtimeMs > statSync(stamp).mtimeMs;
+
+  if (needsInstall) {
+    console.log("Dependencies changed — installing (this can take a few minutes)…");
+    await run("npm", ["install", "--no-audit", "--no-fund"]);
+  }
+}
+
 async function main() {
+  await ensureDependencies();
   await ensureDatabase();
 
-  if (FORCE_SETUP || !existsSync(SETUP_MARKER)) {
+  const setupCurrent =
+    existsSync(SETUP_MARKER) && readFileSync(SETUP_MARKER, "utf8").includes(SETUP_VERSION);
+
+  if (FORCE_SETUP || !setupCurrent) {
     console.log("\nApplying database schema…");
     await run("npx", ["prisma", "db", "push", "--skip-generate"]);
+
+    // The seed uses the generated client, so it must match the new schema.
+    console.log("\nGenerating database client…");
+    await run("npx", ["prisma", "generate"]);
+
     console.log("\nSeeding demo data (safe to re-run)…");
     try {
       await run("npx", ["tsx", "prisma/seed.ts"]);
     } catch {
       console.log("Seed step failed or already applied — continuing.");
     }
-    writeFileSync(SETUP_MARKER, new Date().toISOString());
+    writeFileSync(SETUP_MARKER, `${SETUP_VERSION} ${new Date().toISOString()}`);
   } else {
     console.log("✓ Database already set up (delete .setup-done to re-run schema/seed)");
   }
@@ -162,7 +247,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("\n✗ Startup failed:", err.message);
+  console.error("\n✗ Startup failed:", err instanceof Error ? err.message : String(err));
   console.error("Try running start-sura.bat again; if it persists, delete the .next folder and retry.");
   process.exitCode = 1;
 });

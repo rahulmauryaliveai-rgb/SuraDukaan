@@ -4,6 +4,7 @@
  */
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { SHOWCASE_SHOPS } from "./showcase";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const db = new PrismaClient({ adapter });
@@ -159,61 +160,91 @@ async function main() {
     update: {},
   });
 
-  console.log("Seeding demo shop: Urban Threads…");
-  const shop = await db.shop.upsert({
-    where: { slug: "urban-threads" },
-    create: {
-      slug: "urban-threads",
-      name: "Urban Threads",
-      category: "Clothing",
-      description:
-        "Modern everyday fashion for men — shirts, denim, sneakers and accessories. Order directly on WhatsApp.",
-      city: "Mumbai",
-      whatsapp: "918888888888",
-      status: "LIVE",
-      coverUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=75",
-      logoUrl: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=200&q=75",
-      members: { create: { userId: owner.id, role: "SHOP_OWNER" } },
-      theme: { create: { template: "fashion", primaryColor: "#0f766e" } },
-    },
-    update: {},
-    include: { categories: true },
-  });
+  console.log(`Seeding ${SHOWCASE_SHOPS.length} showcase shops…`);
+  let demoShopId = "";
 
-  const catNames = ["Men", "Footwear", "Accessories"];
-  const cats: Record<string, string> = {};
-  for (const [i, name] of catNames.entries()) {
-    const slug = name.toLowerCase();
-    const cat = await db.category.upsert({
-      where: { shopId_slug: { shopId: shop.id, slug } },
-      create: { shopId: shop.id, name, slug, sortOrder: i },
-      update: {},
-    });
-    cats[name] = cat.id;
-  }
-
-  console.log("Seeding demo products…");
-  for (const p of DEMO_PRODUCTS) {
-    await db.product.upsert({
-      where: { shopId_slug: { shopId: shop.id, slug: p.slug } },
+  for (const s of SHOWCASE_SHOPS) {
+    const shop = await db.shop.upsert({
+      where: { slug: s.slug },
       create: {
-        shopId: shop.id,
-        slug: p.slug,
-        name: p.name,
-        price: p.price,
-        discountPrice: p.discountPrice,
-        description: p.description,
-        categoryId: cats[p.category],
-        isFeatured: p.featured,
-        isPublished: true,
-        inStock: true,
-        images: { create: [{ url: p.image, isMain: true, sortOrder: 0 }] },
-        tags: { create: p.tags.map((tag) => ({ tag })) },
-        variants: { create: p.variants.map((v) => ({ name: v.name, options: JSON.stringify(v.options) })) },
+        slug: s.slug,
+        name: s.name,
+        category: s.category,
+        description: s.description,
+        city: s.city,
+        whatsapp: s.whatsapp,
+        status: "LIVE",
+        isShowcase: true,
+        logoUrl: s.logoUrl,
+        coverUrl: s.coverUrl,
+        theme: { create: { template: s.theme } },
       },
-      update: {},
+      update: {
+        isShowcase: true,
+        description: s.description,
+        logoUrl: s.logoUrl,
+        coverUrl: s.coverUrl,
+        theme: {
+          upsert: {
+            create: { template: s.theme },
+            update: { template: s.theme },
+          },
+        },
+      },
     });
+
+    // The demo owner account manages Urban Threads.
+    if (s.slug === "urban-threads") {
+      demoShopId = shop.id;
+      await db.shopMember.upsert({
+        where: { shopId_userId: { shopId: shop.id, userId: owner.id } },
+        create: { shopId: shop.id, userId: owner.id, role: "SHOP_OWNER" },
+        update: {},
+      });
+    }
+
+    const catIds: Record<string, string> = {};
+    for (const [i, name] of s.categories.entries()) {
+      const catSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      const cat = await db.category.upsert({
+        where: { shopId_slug: { shopId: shop.id, slug: catSlug } },
+        create: { shopId: shop.id, name, slug: catSlug, sortOrder: i },
+        update: {},
+      });
+      catIds[name] = cat.id;
+    }
+
+    for (const p of s.products) {
+      const pSlug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      await db.product.upsert({
+        where: { shopId_slug: { shopId: shop.id, slug: pSlug } },
+        create: {
+          shopId: shop.id,
+          slug: pSlug,
+          name: p.name,
+          price: p.price,
+          discountPrice: p.discountPrice ?? null,
+          description: p.description,
+          categoryId: catIds[p.category],
+          isFeatured: p.featured ?? false,
+          isPublished: true,
+          inStock: true,
+          images: { create: [{ url: p.image, isMain: true, sortOrder: 0 }] },
+          tags: { create: p.tags.map((tag) => ({ tag })) },
+          variants: {
+            create: (p.variants ?? []).map((v) => ({
+              name: v.name,
+              options: JSON.stringify(v.options),
+            })),
+          },
+        },
+        update: {},
+      });
+    }
+    console.log(`  ✓ /${s.slug} (${s.theme})`);
   }
+
+  const shop = { id: demoShopId };
 
   console.log("Seeding demo analytics…");
   const existingEvents = await db.analyticsEvent.count({ where: { shopId: shop.id } });
