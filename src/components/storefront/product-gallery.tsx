@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Package } from "lucide-react";
+import { SafeImage } from "@/components/storefront/safe-image";
 import { cn } from "@/lib/utils";
 
 export function ProductGallery({
@@ -19,9 +20,10 @@ export function ProductGallery({
     <div>
       <div className="relative aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-white">
         {current ? (
-          <Image
+          <SafeImage
             src={current.url}
             alt={current.alt || productName}
+            label={productName}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover"

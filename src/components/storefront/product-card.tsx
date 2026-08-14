@@ -1,7 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
-import { Package } from "lucide-react";
 import { formatINR, discountPercent, cn } from "@/lib/utils";
+import { SafeImage } from "@/components/storefront/safe-image";
 import type { ThemeTokens } from "@/lib/themes";
 
 export interface ProductCardData {
@@ -48,20 +47,15 @@ export function ProductCard({
         className="relative overflow-hidden bg-black/5"
         style={{ aspectRatio: theme.grid.aspect }}
       >
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition duration-300 group-hover:scale-[1.03]"
-            loading="lazy"
-          />
-        ) : (
-          <span className="flex h-full items-center justify-center opacity-30">
-            <Package className="h-10 w-10" />
-          </span>
-        )}
+        <SafeImage
+          src={product.imageUrl}
+          alt={product.name}
+          label={product.name}
+          fill
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          className="object-cover transition duration-300 group-hover:scale-[1.03]"
+          loading="lazy"
+        />
         {pct > 0 && (
           <span
             className="absolute left-2 top-2 px-2 py-0.5 text-xs font-bold"

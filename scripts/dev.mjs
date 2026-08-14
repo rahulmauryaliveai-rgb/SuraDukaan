@@ -81,6 +81,33 @@ function canConnect(port, host = "127.0.0.1") {
   });
 }
 
+/** Stops whatever is already listening on a port (an older SURA SHOP run). */
+async function freePort(port) {
+  if (!(await canConnect(port))) return;
+  console.log(`Port ${port} is in use — stopping the previous server…`);
+  const { execSync } = await import("child_process");
+  try {
+    const out = execSync(`netstat -ano -p tcp | findstr :${port}`, { encoding: "utf8" });
+    const pids = new Set(
+      out
+        .split(/\r?\n/)
+        .filter((l) => l.includes("LISTENING"))
+        .map((l) => l.trim().split(/\s+/).pop())
+        .filter((p) => p && p !== "0" && Number(p) !== process.pid),
+    );
+    for (const pid of pids) {
+      try {
+        execSync(`taskkill /F /PID ${pid}`, { stdio: "ignore" });
+      } catch {
+        /* already gone */
+      }
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  } catch {
+    /* nothing listening, or netstat unavailable */
+  }
+}
+
 function run(cmd, args) {
   return new Promise((resolve, reject) => {
     const p = spawn(cmd, args, { stdio: "inherit", shell: true, env: process.env });
@@ -89,6 +116,61 @@ function run(cmd, args) {
 }
 
 let embedded = null;
+
+/**
+ * Creates the `surashop` database with UTF-8 encoding.
+ *
+ * On Indian/European Windows, initdb picks WIN1252 for the cluster, which
+ * cannot store the ₹ sign — seeding then fails with error 22P05. Creating the
+ * database from template0 with an explicit encoding avoids that entirely.
+ */
+async function ensureUtf8Database() {
+  const { Client } = await import("pg");
+  const admin = new Client({ connectionString: "postgresql://sura:sura@127.0.0.1:5433/postgres" });
+  await admin.connect();
+  try {
+    const { rows } = await admin.query(
+      "SELECT pg_encoding_to_char(encoding) AS enc FROM pg_database WHERE datname = 'surashop'",
+    );
+
+    if (rows.length === 0) {
+      await admin.query(
+        "CREATE DATABASE surashop WITH ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'",
+      );
+      console.log("✓ Created database (UTF-8)");
+      return;
+    }
+
+    if (rows[0].enc === "UTF8") return;
+
+    // Wrong encoding: safe to rebuild only if the schema was never created.
+    const probe = new Client({ connectionString: EMBEDDED_URL_STATIC });
+    await probe.connect();
+    const { rows: tables } = await probe.query(
+      "SELECT COUNT(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'",
+    );
+    await probe.end();
+
+    if (tables[0].n > 0) {
+      console.warn(
+        `\n[warning] Database encoding is ${rows[0].enc}, not UTF-8. The ₹ sign cannot be stored.` +
+          "\n          Run reset-local-db.bat to rebuild it cleanly.\n",
+      );
+      return;
+    }
+
+    console.log(`Database encoding is ${rows[0].enc}; recreating it as UTF-8…`);
+    await admin.query("DROP DATABASE surashop");
+    await admin.query(
+      "CREATE DATABASE surashop WITH ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'",
+    );
+    console.log("✓ Database recreated with UTF-8 encoding");
+  } finally {
+    await admin.end();
+  }
+}
+
+const EMBEDDED_URL_STATIC = "postgresql://sura:sura@127.0.0.1:5433/surashop";
 
 async function ensureDatabase() {
   const url = process.env.DATABASE_URL;
@@ -143,11 +225,7 @@ async function ensureDatabase() {
     }
   }
 
-  try {
-    await embedded.createDatabase("surashop");
-  } catch {
-    /* already exists */
-  }
+  await ensureUtf8Database();
   process.env.DATABASE_URL = EMBEDDED_URL;
   syncDirectUrl();
   setEnvFileValue("DATABASE_URL", EMBEDDED_URL);
@@ -212,6 +290,7 @@ async function main() {
     serverCmd = ["next", "start", "-p", "3000"];
   }
 
+  await freePort(3000);
   const server = spawn("npx", serverCmd, { stdio: "inherit", shell: true, env: process.env });
 
   // Open the browser once the server responds.
