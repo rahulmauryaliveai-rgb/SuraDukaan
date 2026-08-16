@@ -23,6 +23,13 @@ rem Ensure a commit identity exists (local to this repo only)
 git config user.name >nul 2>nul || git config user.name "Rahul Maurya"
 git config user.email >nul 2>nul || git config user.email "rahulmauryaliveai@gmail.com"
 
+rem An interrupted git command (or a PC lock mid-push) can leave this behind and
+rem block every later commit. No git process runs at this point, so it is stale.
+if exist ".git\index.lock" (
+  echo Clearing a leftover git lock file...
+  del /f /q ".git\index.lock"
+)
+
 echo Adding files...
 git add -A
 

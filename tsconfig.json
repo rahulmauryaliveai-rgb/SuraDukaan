@@ -19,5 +19,5 @@
     "paths": { "@/*": ["./src/*"] }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "prisma/seed.ts", "tests"]
+  "exclude": ["node_modules", "prisma/seed.ts", "prisma/showcase.ts", "tests", "scripts"]
 }

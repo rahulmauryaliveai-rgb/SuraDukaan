@@ -11,7 +11,7 @@
  * 2. First run: applies schema + seeds demo data (skipped afterwards).
  * 3. Serves the app and opens the browser.
  */
-import { existsSync, readFileSync, writeFileSync, statSync } from "fs";
+import { existsSync, readFileSync, writeFileSync, statSync, rmSync } from "fs";
 import { spawn } from "child_process";
 import net from "net";
 import path from "path";
@@ -252,16 +252,17 @@ async function main() {
   await ensureDependencies();
   await ensureDatabase();
 
+  // Always regenerate: a client left over from an older schema causes
+  // "Something went wrong" pages that are very hard to diagnose.
+  console.log("\nGenerating database client…");
+  await run("npx", ["prisma", "generate"]);
+
   const setupCurrent =
     existsSync(SETUP_MARKER) && readFileSync(SETUP_MARKER, "utf8").includes(SETUP_VERSION);
 
   if (FORCE_SETUP || !setupCurrent) {
     console.log("\nApplying database schema…");
     await run("npx", ["prisma", "db", "push", "--skip-generate"]);
-
-    // The seed uses the generated client, so it must match the new schema.
-    console.log("\nGenerating database client…");
-    await run("npx", ["prisma", "generate"]);
 
     console.log("\nSeeding demo data (safe to re-run)…");
     try {
@@ -281,6 +282,12 @@ async function main() {
   } else {
     const hasBuild = existsSync(path.join(root, ".next", "BUILD_ID"));
     if (!hasBuild || FORCE_REBUILD) {
+      // A stale .next can keep serving removed routes after a restructure,
+      // which shows up as "Something went wrong". Start clean on a rebuild.
+      if (FORCE_REBUILD && existsSync(path.join(root, ".next"))) {
+        console.log("Clearing previous build cache…");
+        rmSync(path.join(root, ".next"), { recursive: true, force: true });
+      }
       console.log("\nBuilding optimized production bundle (one-time, a few minutes)…");
       await run("npx", ["next", "build"]);
     } else {

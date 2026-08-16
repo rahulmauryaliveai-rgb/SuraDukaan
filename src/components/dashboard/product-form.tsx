@@ -7,6 +7,7 @@ import { ImagePlus, Sparkles, Trash2, X, ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VariantEditor } from "@/components/dashboard/variant-editor";
 
 export interface ProductFormValues {
   id?: string;
@@ -269,48 +270,10 @@ export function ProductForm({
       {/* Variants */}
       <Card>
         <CardHeader>
-          <CardTitle>Variants (size, color…)</CardTitle>
+          <CardTitle>Options (size, colour…)</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {v.variants.map((variant, i) => (
-            <div key={i} className="rounded-xl border border-ink-100 p-3 space-y-2">
-              <div className="flex gap-2">
-                <input
-                  className="h-10 flex-1 rounded-lg border border-ink-300 px-3 text-sm"
-                  placeholder="Name e.g. Size"
-                  value={variant.name}
-                  onChange={(e) => {
-                    const next = [...v.variants];
-                    next[i] = { ...next[i]!, name: e.target.value };
-                    set("variants", next);
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => set("variants", v.variants.filter((_, idx) => idx !== i))}
-                  className="rounded-lg p-2 text-red-600 hover:bg-red-50"
-                  aria-label="Remove variant"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-              <input
-                className="h-10 w-full rounded-lg border border-ink-300 px-3 text-sm"
-                placeholder="Options separated by commas e.g. S, M, L, XL"
-                value={variant.options.join(", ")}
-                onChange={(e) => {
-                  const next = [...v.variants];
-                  next[i] = { ...next[i]!, options: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) };
-                  set("variants", next);
-                }}
-              />
-            </div>
-          ))}
-          {v.variants.length < 5 && (
-            <Button type="button" variant="outline" size="sm" onClick={() => set("variants", [...v.variants, { name: "", options: [] }])}>
-              + Add variant
-            </Button>
-          )}
+        <CardContent>
+          <VariantEditor variants={v.variants} onChange={(next) => set("variants", next)} />
         </CardContent>
       </Card>
 

@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/** How long the carousel waits before advancing on its own. */
+const AUTOPLAY_MS = 3500;
 
 export interface ShowcaseEntry {
   slug: string;
@@ -138,7 +141,58 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
   const [active, setActive] = useState("All");
   const visible = active === "All" ? entries : entries.filter((e) => e.category === active);
 
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [paused, setPaused] = useState(false);
+
+  /** Width of one card plus the gap between cards. */
+  const cardStep = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const first = el.firstElementChild as HTMLElement | null;
+    if (!first) return el.clientWidth;
+    const styles = getComputedStyle(el);
+    const gap = parseFloat(styles.columnGap || styles.gap || "16") || 16;
+    return first.offsetWidth + gap;
+  }, []);
+
+  /** Advance one card, wrapping around at either end. */
+  const scrollByCards = useCallback(
+    (direction: 1 | -1) => {
+      const el = trackRef.current;
+      if (!el) return;
+      const max = el.scrollWidth - el.clientWidth;
+      if (max <= 0) return;
+
+      let target = el.scrollLeft + direction * cardStep();
+      if (direction === 1 && el.scrollLeft >= max - 4) target = 0;
+      if (direction === -1 && el.scrollLeft <= 4) target = max;
+
+      el.scrollTo({ left: Math.max(0, Math.min(target, max)), behavior: "smooth" });
+    },
+    [cardStep],
+  );
+
+  // Autoplay — stops while the visitor is hovering, touching or tabbing through.
+  useEffect(() => {
+    if (paused || visible.length < 2) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const id = window.setInterval(() => scrollByCards(1), AUTOPLAY_MS);
+    return () => window.clearInterval(id);
+  }, [paused, visible.length, scrollByCards]);
+
+  // Jump back to the first card whenever the category filter changes.
+  useEffect(() => {
+    trackRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }, [active]);
+
   if (entries.length === 0) return null;
+
+  const arrowClass =
+    "absolute top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full " +
+    "border border-ink-200 bg-white/95 text-ink-900 shadow-card backdrop-blur transition " +
+    "hover:bg-white hover:shadow-card-hover active:scale-95 sm:flex";
 
   return (
     <section className="border-t border-ink-100 bg-white py-16">
@@ -172,8 +226,36 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
         </div>
 
         {/* Cards */}
-        <div className="no-scrollbar -mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4">
-          {visible.map((entry) => (
+        <div
+          className="relative"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocusCapture={() => setPaused(true)}
+          onBlurCapture={() => setPaused(false)}
+          onTouchStart={() => setPaused(true)}
+        >
+          <button
+            type="button"
+            onClick={() => scrollByCards(-1)}
+            aria-label="Previous shops"
+            className={cn(arrowClass, "-left-3 lg:-left-5")}
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollByCards(1)}
+            aria-label="Next shops"
+            className={cn(arrowClass, "-right-3 lg:-right-5")}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div
+            ref={trackRef}
+            className="no-scrollbar -mx-4 mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4"
+          >
+            {visible.map((entry) => (
             <article
               key={entry.slug}
               className="w-[19rem] shrink-0 snap-start rounded-2xl border border-ink-100 bg-white p-4 shadow-card transition hover:shadow-card-hover"
@@ -221,7 +303,8 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
                 </a>
               </div>
             </article>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>
