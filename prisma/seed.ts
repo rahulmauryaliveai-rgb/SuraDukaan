@@ -175,6 +175,28 @@ async function main() {
         create: { shopId: shop.id, userId: owner.id, role: "SHOP_OWNER" },
         update: {},
       });
+
+      // Put the demo shop on a paid plan so the AI features are actually
+      // reachable in development. Without this it falls back to Free and every
+      // AI action just shows the upgrade prompt.
+      const demoPlan = await db.plan.findUnique({ where: { code: "business-yearly" } });
+      if (demoPlan) {
+        const existing = await db.subscription.findFirst({
+          where: { shopId: shop.id, status: "ACTIVE" },
+        });
+        if (!existing) {
+          await db.subscription.create({
+            data: { shopId: shop.id, planId: demoPlan.id, status: "ACTIVE", endsAt: null },
+          });
+        }
+        await db.shop.update({
+          where: { id: shop.id },
+          data: {
+            aiCredits: demoPlan.aiCreditsPerMonth,
+            aiCreditsRenewedAt: new Date(),
+          },
+        });
+      }
     }
 
     const catIds: Record<string, string> = {};
