@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Check, Sparkles } from "lucide-react";
 import { formatINR, cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export interface PricingPlan {
   code: string;
@@ -75,42 +74,30 @@ export function PricingTable({ plans }: { plans: PricingPlan[] }) {
   return (
     <>
       {/* Billing toggle */}
-      <div className="mt-8 flex flex-col items-center gap-2">
-        <div
-          className="inline-flex rounded-full border border-ink-200 bg-white p-1"
-          role="group"
-          aria-label="Billing period"
-        >
-          <button
-            type="button"
-            onClick={() => setYearly(false)}
-            aria-pressed={!yearly}
-            className={cn(
-              "rounded-full px-5 py-2 text-sm font-semibold transition",
-              !yearly ? "bg-ink-900 text-white" : "text-ink-700 hover:bg-ink-50",
-            )}
-          >
-            Monthly
-          </button>
-          <button
-            type="button"
-            onClick={() => setYearly(true)}
-            aria-pressed={yearly}
-            className={cn(
-              "rounded-full px-5 py-2 text-sm font-semibold transition",
-              yearly ? "bg-ink-900 text-white" : "text-ink-700 hover:bg-ink-50",
-            )}
-          >
-            Yearly
-          </button>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="inline-flex rounded-pill bg-soft-100 p-1.5" role="group" aria-label="Billing period">
+          {([false, true] as const).map((isYearly) => (
+            <button
+              key={String(isYearly)}
+              type="button"
+              onClick={() => setYearly(isYearly)}
+              aria-pressed={yearly === isYearly}
+              className={cn(
+                "rounded-pill px-6 py-2.5 text-sm font-semibold transition duration-300",
+                yearly === isYearly ? "bg-deep-800 text-white" : "text-deep-700 hover:bg-white/60",
+              )}
+            >
+              {isYearly ? "Yearly" : "Monthly"}
+            </button>
+          ))}
         </div>
-        <p className="text-sm font-medium text-brand-700">
-          {yearly ? `You're saving ${headlineSaving}% — about 2 months free` : `Pay yearly and save ${headlineSaving}%`}
-        </p>
+        <span className="rounded-pill bg-mint-400 px-4 py-1.5 text-sm font-bold text-deep-800">
+          {yearly ? `Saving ${headlineSaving}% — about 2 months free` : `Save ${headlineSaving}% yearly`}
+        </span>
       </div>
 
       {/* Plan cards */}
-      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-10 grid items-start gap-4 md:grid-cols-2 xl:grid-cols-4">
         {shown.map((plan) => {
           const popular = plan.familyCode === "business";
           const monthly = perMonth(plan);
@@ -120,60 +107,93 @@ export function PricingTable({ plans }: { plans: PricingPlan[] }) {
             <div
               key={plan.code}
               className={cn(
-                "flex flex-col rounded-2xl border bg-white p-6",
+                "flex flex-col rounded-card border p-8 transition duration-300",
                 popular
-                  ? "border-brand-600 shadow-card-hover ring-1 ring-brand-600"
-                  : "border-ink-100 shadow-card",
+                  ? "border-deep-800 bg-deep-800 text-white xl:scale-[1.03]"
+                  : "border-line-200 bg-white",
               )}
             >
               {popular && (
-                <span className="mb-2 self-start rounded-full bg-brand-700 px-2.5 py-0.5 text-xs font-bold text-white">
+                <span className="mb-2 self-start text-[11px] font-bold uppercase tracking-[0.08em] text-mint-400">
                   Most popular
                 </span>
               )}
-              <h3 className="font-bold">{plan.name}</h3>
+              <h3 className={cn("text-xl font-bold", popular ? "text-white" : "text-deep-700")}>
+                {plan.name}
+              </h3>
 
-              <p className="mt-2">
-                <span className="text-3xl font-extrabold">{formatINR(monthly)}</span>
-                {isPaid && <span className="text-sm text-ink-500">/month</span>}
+              <p className="mt-3">
+                <span
+                  className={cn(
+                    "text-[32px] font-extrabold leading-none",
+                    popular ? "text-white" : "text-deep-700",
+                  )}
+                >
+                  {formatINR(monthly)}
+                </span>
+                {isPaid && (
+                  <span className={cn("text-sm", popular ? "text-white/75" : "text-moss-600")}>
+                    /month
+                  </span>
+                )}
               </p>
 
-              {isPaid && (
-                <p className="mt-1 text-xs text-ink-500">
-                  {plan.interval === "YEARLY"
+              <p className={cn("mt-1 text-xs", popular ? "text-white/70" : "text-moss-600")}>
+                {!isPaid
+                  ? "Free forever"
+                  : plan.interval === "YEARLY"
                     ? `${formatINR(plan.priceInr)} billed once a year`
                     : "Billed monthly · cancel anytime"}
-                </p>
-              )}
-              {!isPaid && <p className="mt-1 text-xs text-ink-500">Free forever</p>}
+              </p>
 
               {plan.aiCreditsPerMonth > 0 && (
-                <p className="mt-3 inline-flex items-center gap-1.5 self-start rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">
+                <p
+                  className={cn(
+                    "mt-4 inline-flex items-center gap-1.5 self-start rounded-pill px-3 py-1 text-xs font-semibold",
+                    popular ? "bg-white/15 text-mint-400" : "bg-soft-100 text-deep-800",
+                  )}
+                >
                   <Sparkles className="h-3.5 w-3.5" />
                   {plan.aiCreditsPerMonth} AI credits/month
                 </p>
               )}
 
-              <ul className="mt-4 flex-1 space-y-1.5 text-sm text-ink-700">
+              <ul
+                className={cn(
+                  "mt-5 flex-1 space-y-2.5 text-sm",
+                  popular ? "text-white/90" : "text-moss-600",
+                )}
+              >
                 {features(plan).map((f) => (
-                  <li key={f} className="flex gap-1.5">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                  <li key={f} className="flex gap-2">
+                    <Check
+                      className={cn(
+                        "mt-0.5 h-3.5 w-3.5 shrink-0",
+                        popular ? "text-mint-400" : "text-deep-800",
+                      )}
+                    />
                     {f}
                   </li>
                 ))}
               </ul>
 
-              <Link href="/register" className="mt-6">
-                <Button variant={popular ? "primary" : "outline"} className="w-full">
-                  {isPaid ? "Get Started" : "Start Free"}
-                </Button>
+              <Link
+                href="/register"
+                className={cn(
+                  "mt-8 rounded-pill px-6 py-3 text-center text-sm font-semibold transition duration-300",
+                  popular
+                    ? "bg-mint-400 text-deep-800 shadow-raise hover:bg-mint-500"
+                    : "border-[1.5px] border-line-200 text-deep-700 hover:bg-soft-50",
+                )}
+              >
+                {isPaid ? "Get started" : "Start free"}
               </Link>
             </div>
           );
         })}
       </div>
 
-      <p className="mt-6 text-center text-xs text-ink-500">
+      <p className="mt-8 text-center text-xs text-moss-600">
         Prices in INR. AI credits refill on the 1st of each month and don&apos;t carry over.
         Need more? Top-up packs start at ₹199 for 25 credits and never expire.
       </p>

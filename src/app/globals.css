@@ -22,6 +22,55 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --shadow-card: 0 1px 3px 0 rgb(15 23 42 / 0.06), 0 4px 12px -2px rgb(15 23 42 / 0.08);
   --shadow-card-hover: 0 2px 6px 0 rgb(15 23 42 / 0.08), 0 12px 24px -6px rgb(15 23 42 / 0.14);
+
+  /* ---------------------------------------------------------------
+     Marketing surface only (landing, pricing, features).
+     Tenant storefronts render from the Plan/ShopTheme tables and must
+     not inherit any of this — that is the whole point of the 16-theme
+     system. Contrast ratios are noted where they matter.
+     --------------------------------------------------------------- */
+  --color-deep-900: #043c3a;
+  --color-deep-800: #045857; /* primary surface */
+  --color-deep-700: #134e48; /* headings — 9.4:1 on white */
+  --color-moss-600: #3f6c6b; /* body text  — 5.9:1 on white */
+  --color-mint-400: #cdface; /* accent     — 7.2:1 on deep-800 */
+  --color-mint-500: #b6f2a0;
+  --color-soft-100: #eaf4ea;
+  --color-soft-50: #f4fbf3;
+  --color-line-200: #d7f0d7;
+
+  --radius-pill: 100px;
+  --radius-card: 15px;
+
+  --shadow-raise:
+    rgb(205 250 206 / 0.08) 0 1px 1px 0 inset,
+    rgb(0 31 31 / 0.24) 0 -2px 1px 0 inset,
+    rgb(0 31 31 / 0.32) 0 0 1px 0,
+    rgb(0 31 31 / 0.06) 0 2px 2px 0,
+    rgb(0 31 31 / 0.06) 0 4px 4px 0,
+    rgb(0 31 31 / 0.06) 0 8px 8px 0;
+  --shadow-lift: rgb(4 88 87 / 0.06) 0 2px 8px, rgb(4 88 87 / 0.05) 0 12px 32px;
+
+  --ease-brand: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+/* Gentle float used by the hero stat cards. */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.animate-bob {
+  animation: bob 5s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-bob {
+    animation: none;
+  }
 }
 
 html {
@@ -30,7 +79,7 @@ html {
 }
 
 body {
-  @apply bg-ink-50 text-ink-900 antialiased;
+  @apply bg-ink-50 font-sans text-ink-900 antialiased;
 }
 
 .no-scrollbar::-webkit-scrollbar {

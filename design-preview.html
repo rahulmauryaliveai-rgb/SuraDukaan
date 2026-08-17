@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SURA SHOP — design preview (Sastik style)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Tokens — corrected from the Sastik reference.
+   The scraped DESIGN.md spacing scale (1px–12.4px) was unusable
+   and two of its colours failed the WCAG AA target it set, so
+   the scale is rebuilt on a 4px grid and contrast is verified.
+   ============================================================ */
+:root{
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Brand — deep teal + mint, from the reference */
+  --teal-900:#043c3a;
+  --teal-800:#045857;   /* primary */
+  --teal-700:#134e48;   /* headings */
+  --teal-500:#0f766e;   /* existing SURA brand — near-identical */
+  --ink-600:#3f6c6b;    /* body text  5.9:1 on white */
+  --mint:#cdface;       /* accent     7.2:1 with teal-800 */
+  --mint-600:#b6f2a0;
+  --surface:#ffffff;
+  --surface-soft:#eaf4ea;
+  --surface-mint:#f4fbf3;
+  --border:#d7f0d7;
+  --indigo:#5e5efa;
+
+  /* Type scale */
+  --fs-xs:14px; --fs-sm:16px; --fs-md:18px; --fs-lg:20px;
+  --fs-xl:30px; --fs-2xl:32px; --fs-3xl:56px; --fs-4xl:80px;
+
+  /* Spacing — 4px grid (rebuilt) */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:24px;
+  --s6:32px; --s7:48px; --s8:64px; --s9:96px; --s10:128px;
+
+  /* Radius — from the reference */
+  --r-xs:5px; --r-sm:15px; --r-md:50px; --r-pill:100px;
+
+  --shadow-btn:
+    rgba(205,250,206,.08) 0 1px 1px 0 inset,
+    rgba(0,31,31,.24) 0 -2px 1px 0 inset,
+    rgba(0,31,31,.32) 0 0 1px 0,
+    rgba(0,31,31,.06) 0 2px 2px 0,
+    rgba(0,31,31,.06) 0 4px 4px 0,
+    rgba(0,31,31,.06) 0 8px 8px 0;
+  --shadow-card: rgba(4,88,87,.06) 0 2px 8px, rgba(4,88,87,.05) 0 12px 32px;
+
+  --t-fast:300ms; --t-med:400ms;
+  --ease: cubic-bezier(.2,.7,.3,1);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;font-family:var(--font);font-size:var(--fs-sm);
+  line-height:26px;font-weight:400;color:var(--ink-600);background:var(--surface);
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{color:var(--teal-700);margin:0;letter-spacing:-.02em;line-height:1.08}
+h1{font-size:clamp(38px,7vw,var(--fs-4xl));font-weight:800}
+h2{font-size:clamp(28px,4.4vw,var(--fs-3xl));font-weight:800}
+h3{font-size:var(--fs-lg);font-weight:700;line-height:1.3}
+p{margin:0}
+a{color:inherit;text-decoration:none}
+img{max-width:100%;display:block}
+.wrap{max-width:1180px;margin:0 auto;padding:0 var(--s5)}
+section{padding:var(--s9) 0}
+
+/* Focus — the reference demanded visible focus and never shipped it */
+:where(a,button,input,summary):focus-visible{
+  outline:3px solid var(--teal-800);outline-offset:3px;border-radius:var(--r-xs);
+}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:var(--s2);
+  padding:14px 28px;border-radius:var(--r-pill);border:0;cursor:pointer;
+  font:600 var(--fs-sm)/1 var(--font);
+  transition:transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.btn-primary{background:var(--mint);color:var(--teal-800);box-shadow:var(--shadow-btn)}
+.btn-primary:hover{background:var(--mint-600);transform:translateY(-2px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-dark{background:var(--teal-800);color:#fff}
+.btn-dark:hover{background:var(--teal-900);transform:translateY(-2px)}
+.btn-ghost{background:transparent;color:var(--teal-700);border:1.5px solid var(--border)}
+.btn-ghost:hover{background:var(--surface-mint)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+
+.eyebrow{
+  display:inline-block;padding:6px 16px;border-radius:var(--r-pill);
+  background:var(--surface-soft);color:var(--teal-800);
+  font-size:var(--fs-xs);font-weight:600;letter-spacing:.02em;
+}
+
+/* ---------- Nav ---------- */
+header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav{display:flex;align-items:center;gap:var(--s6);height:76px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:var(--fs-lg);color:var(--teal-700)}
+.logo span{color:var(--teal-500)}
+.mark{width:34px;height:34px;border-radius:var(--r-xs);background:var(--teal-800);display:grid;place-items:center;color:var(--mint);font-size:18px}
+.nav ul{display:flex;gap:var(--s5);list-style:none;margin:0;padding:0;font-weight:500}
+.nav ul a:hover{color:var(--teal-800)}
+.nav .spacer{margin-left:auto}
+.nav-cta{display:flex;gap:var(--s3);align-items:center}
+@media(max-width:860px){.nav ul{display:none}}
+
+/* ---------- Hero ---------- */
+.hero{padding-top:var(--s8);background:
+  radial-gradient(900px 460px at 78% 8%, var(--surface-mint), transparent 65%),
+  radial-gradient(700px 380px at 8% 0%, #f0f9ef, transparent 60%);}
+.hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:var(--s8);align-items:center}
+.hero p.lead{font-size:var(--fs-md);max-width:46ch;margin-top:var(--s4)}
+.hero-actions{display:flex;gap:var(--s3);align-items:center;margin-top:var(--s6);flex-wrap:wrap}
+.microcopy{font-size:var(--fs-xs);color:var(--ink-600)}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr;gap:var(--s7)}}
+
+/* Phone mock + floating stat cards */
+.stage{position:relative;display:grid;place-items:center;min-height:520px}
+.phone{
+  width:290px;border-radius:38px;background:var(--teal-900);padding:10px;
+  box-shadow:0 30px 70px rgba(4,60,58,.28);
+}
+.screen{background:#fff;border-radius:30px;overflow:hidden}
+.screen-top{background:var(--teal-800);color:#fff;padding:var(--s5) var(--s4) var(--s5)}
+.screen-top small{opacity:.75;font-size:12px}
+.screen-top h4{color:#fff;font-size:var(--fs-lg);margin-top:2px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.tile{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.tile .ph{height:74px;background:linear-gradient(135deg,var(--surface-soft),#dff0dd)}
+.tile p{font-size:12px;font-weight:600;color:var(--teal-700);padding:6px 8px 2px}
+.tile small{display:block;font-size:12px;padding:0 8px 8px}
+.wa{margin:6px 12px 14px;background:#25D366;color:#fff;border-radius:var(--r-pill);text-align:center;padding:11px;font-weight:600;font-size:13px}
+.float{
+  position:absolute;background:#fff;border-radius:var(--r-sm);padding:var(--s4) var(--s5);
+  box-shadow:var(--shadow-card);border:1px solid var(--border);
+  animation:bob 5s ease-in-out infinite;
+}
+.float b{display:block;font-size:var(--fs-2xl);font-weight:800;color:var(--teal-800);line-height:1}
+.float small{font-size:13px}
+.f1{top:34px;left:0}
+.f2{bottom:60px;right:0;animation-delay:-2.5s}
+.f3{top:210px;right:-6px;animation-delay:-1.2s;padding:var(--s3) var(--s4)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@media(prefers-reduced-motion:reduce){.float{animation:none}*{transition:none!important}}
+@media(max-width:520px){.f1,.f2,.f3{display:none}}
+
+/* ---------- Trust bar ---------- */
+.trust{padding:var(--s6) 0;border-block:1px solid var(--border);background:var(--surface-mint)}
+.trust p{text-align:center;font-size:var(--fs-xs);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.trust-row{display:flex;justify-content:center;gap:var(--s7);flex-wrap:wrap;margin-top:var(--s4);opacity:.65}
+.trust-row span{font-weight:700;color:var(--teal-700);font-size:var(--fs-md)}
+
+/* ---------- Section head ---------- */
+.head{text-align:center;max-width:680px;margin:0 auto var(--s8)}
+.head p{margin-top:var(--s4);font-size:var(--fs-md)}
+
+/* ---------- Feature grid ---------- */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s5)}
+.card{
+  background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:var(--s6);transition:transform var(--t-fast) var(--ease),box-shadow var(--t-fast) var(--ease);
+}
+.card:hover{transform:translateY(-6px);box-shadow:var(--shadow-card)}
+.icon{width:52px;height:52px;border-radius:14px;background:var(--surface-soft);display:grid;place-items:center;font-size:24px;margin-bottom:var(--s4)}
+.card p{margin-top:var(--s3)}
+@media(max-width:900px){.features{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.features{grid-template-columns:1fr}}
+
+/* ---------- Alternating blocks ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:var(--s8);align-items:center;margin-bottom:var(--s9)}
+.split:last-child{margin-bottom:0}
+.split.rev .art{order:-1}
+.art{background:linear-gradient(140deg,var(--surface-soft),#dff0dd);border-radius:var(--r-sm);min-height:340px;display:grid;place-items:center;border:1px solid var(--border);position:relative;overflow:hidden}
+.art .big{font-size:64px}
+.checks{list-style:none;padding:0;margin:var(--s5) 0 0;display:grid;gap:var(--s3)}
+.checks li{display:flex;gap:10px;align-items:flex-start}
+.checks .tick{color:var(--teal-800);font-weight:800}
+@media(max-width:900px){.split{grid-template-columns:1fr;gap:var(--s5)}.split.rev .art{order:0}}
+
+/* ---------- Stats band ---------- */
+.band{background:var(--teal-800);color:#fff;border-radius:var(--r-sm);padding:var(--s8) var(--s6)}
+.band h2{color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s5);margin-top:var(--s7)}
+.stat{text-align:center}
+.stat b{display:block;font-size:var(--fs-3xl);font-weight:800;color:var(--mint);line-height:1}
+.stat small{color:rgba(255,255,255,.82);font-size:var(--fs-sm)}
+@media(max-width:700px){.stats{grid-template-columns:1fr;gap:var(--s6)}}
+
+/* ---------- Themes ---------- */
+.themes{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s4)}
+.theme{border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--border);transition:transform var(--t-fast) var(--ease)}
+.theme:hover{transform:translateY(-6px)}
+.theme .sw{height:96px}
+.theme p{padding:10px 14px;font-weight:600;font-size:var(--fs-xs);color:var(--teal-700)}
+@media(max-width:900px){.themes{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- Pricing ---------- */
+.toggle{display:flex;justify-content:center;align-items:center;gap:var(--s3);margin-bottom:var(--s7)}
+.switch{background:var(--surface-soft);border-radius:var(--r-pill);padding:5px;display:flex;gap:4px}
+.switch button{border:0;background:transparent;padding:10px 22px;border-radius:var(--r-pill);cursor:pointer;font:600 var(--fs-xs)/1 var(--font);color:var(--teal-700);transition:all var(--t-fast) var(--ease)}
+.switch button[aria-pressed="true"]{background:var(--teal-800);color:#fff}
+.save{background:var(--mint);color:var(--teal-800);padding:6px 14px;border-radius:var(--r-pill);font-size:var(--fs-xs);font-weight:700}
+.plans{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s4);align-items:start}
+.plan{background:#fff;border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--s6)}
+.plan.featured{background:var(--teal-800);border-color:var(--teal-800);color:#fff;transform:scale(1.03)}
+.plan.featured h3,.plan.featured .price{color:#fff}
+.plan.featured li{color:rgba(255,255,255,.9)}
+.price{font-size:var(--fs-2xl);font-weight:800;color:var(--teal-700);margin:var(--s3) 0 2px}
+.per{font-size:var(--fs-xs);opacity:.75}
+.plan ul{list-style:none;padding:0;margin:var(--s5) 0 var(--s6);display:grid;gap:10px;font-size:var(--fs-xs)}
+.plan .btn{width:100%;justify-content:center}
+.tag{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mint)}
+@media(max-width:1000px){.plans{grid-template-columns:1fr 1fr}.plan.featured{transform:none}}
+@media(max-width:560px){.plans{grid-template-columns:1fr}}
+
+/* ---------- FAQ ---------- */
+.faq{max-width:760px;margin:0 auto}
+details{border:1px solid var(--border);border-radius:var(--r-sm);padding:var(--s4) var(--s5);margin-bottom:var(--s3);background:#fff}
+details[open]{background:var(--surface-mint)}
+summary{cursor:pointer;font-weight:600;color:var(--teal-700);list-style:none;display:flex;justify-content:space-between;gap:var(--s4)}
+summary::-webkit-details-marker{display:none}
+summary::after{content:'+';font-size:22px;line-height:1;color:var(--teal-800)}
+details[open] summary::after{content:'–'}
+details p{margin-top:var(--s3)}
+
+/* ---------- Final CTA ---------- */
+.cta{background:var(--teal-900);border-radius:var(--r-sm);padding:var(--s9) var(--s6);text-align:center;color:#fff;position:relative;overflow:hidden}
+.cta h2{color:#fff}
+.cta p{margin:var(--s4) auto 0;max-width:52ch;color:rgba(255,255,255,.82)}
+.cta .btn{margin-top:var(--s6)}
+.blob{position:absolute;width:420px;height:420px;border-radius:50%;background:radial-gradient(circle,rgba(205,250,206,.22),transparent 70%)}
+.blob.a{top:-160px;left:-120px}.blob.b{bottom:-200px;right:-100px}
+
+/* ---------- Footer ---------- */
+footer{background:var(--surface-mint);border-top:1px solid var(--border);padding:var(--s8) 0 var(--s6);margin-top:var(--s9)}
+.fgrid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:var(--s6)}
+footer h4{font-size:var(--fs-xs);text-transform:uppercase;letter-spacing:.08em;margin-bottom:var(--s4)}
+footer ul{list-style:none;padding:0;margin:0;display:grid;gap:10px;font-size:var(--fs-xs)}
+footer a:hover{color:var(--teal-800)}
+.legal{margin-top:var(--s7);padding-top:var(--s5);border-top:1px solid var(--border);display:flex;justify-content:space-between;gap:var(--s4);font-size:var(--fs-xs);flex-wrap:wrap}
+@media(max-width:820px){.fgrid{grid-template-columns:1fr 1fr}}
+
+.note{background:#fffbea;border:1px solid #f5e3a3;color:#6b5310;padding:var(--s4) var(--s5);border-radius:var(--r-sm);font-size:var(--fs-xs);margin:var(--s5) auto var(0);max-width:1180px}
+</style>
+</head>
+<body>
+
+<div class="wrap"><p class="note"><b>Preview only.</b> This file is not wired into the app — nothing in SURA SHOP has been changed. It shows the Sastik design language applied to your real content, pricing and features.</p></div>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="#"><span class="mark">◧</span>SURA <span>SHOP</span></a>
+    <ul>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#themes">Themes</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <div class="spacer"></div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="#">Login</a>
+      <a class="btn btn-primary" href="#">Create free shop</a>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">Your Shop. One Link.</span>
+      <h1 style="margin-top:var(--s5)">Turn your shop into a digital storefront</h1>
+      <p class="lead">Add your products, share one link on WhatsApp, and take orders from customers who never have to install anything.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#">Create your free shop →</a>
+        <a class="btn btn-ghost" href="#">View demo shop</a>
+      </div>
+      <p class="microcopy" style="margin-top:var(--s4)">Free plan · No credit card · Ready in 5 minutes</p>
+    </div>
+
+    <div class="stage">
+      <div class="float f1"><b>5 min</b><small>to go live</small></div>
+      <div class="float f3"><b style="font-size:var(--fs-lg)">16</b><small>shop themes</small></div>
+      <div class="float f2"><b>0%</b><small>commission on orders</small></div>
+      <div class="phone">
+        <div class="screen">
+          <div class="screen-top">
+            <small>sura.shop/sharma-fashion</small>
+            <h4>Sharma Fashion</h4>
+            <small>Clothing · Lucknow</small>
+          </div>
+          <div class="tiles">
+            <div class="tile"><div class="ph"></div><p>Cotton Shirt</p><small>₹899</small></div>
+            <div class="tile"><div class="ph"></div><p>Kurta Set</p><small>₹1,499</small></div>
+            <div class="tile"><div class="ph"></div><p>Sneakers</p><small>₹1,999</small></div>
+            <div class="tile"><div class="ph"></div><p>Denim Jacket</p><small>₹2,299</small></div>
+          </div>
+          <div class="wa">Order on WhatsApp</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="wrap">
+    <p>Built for Indian shop owners</p>
+    <div class="trust-row">
+      <span>Kirana</span><span>Fashion</span><span>Jewellery</span><span>Sweets</span><span>Electronics</span><span>Pharmacy</span>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">Everything included</span>
+      <h2 style="margin-top:var(--s4)">Sell without a website, an app, or a developer</h2>
+      <p>Set your shop up from your phone. Your customers open one link and message you on WhatsApp.</p>
+    </div>
+    <div class="features">
+      <div class="card"><div class="icon">🔗</div><h3>One link for everything</h3><p>Share <b>sura.shop/your-shop</b> on WhatsApp, Instagram or a printed QR code. No installs for your customers.</p></div>
+      <div class="card"><div class="icon">💬</div><h3>Orders on WhatsApp</h3><p>Every product has an order button that opens a WhatsApp chat with the item details already filled in.</p></div>
+      <div class="card"><div class="icon">✨</div><h3>AI photo clean-up</h3><p>Turn a phone snap into a clean studio photo. Your original is always kept, so you can undo any time.</p></div>
+      <div class="card"><div class="icon">🎨</div><h3>16 distinct themes</h3><p>Pick a look that suits your trade. No two shops on SURA have to look the same.</p></div>
+      <div class="card"><div class="icon">📱</div><h3>Built mobile-first</h3><p>You run the shop from your phone. Your buyers arrive on a phone. Everything is designed for that.</p></div>
+      <div class="card"><div class="icon">📊</div><h3>Know what sells</h3><p>See views, enquiries and your most-viewed products — without needing to understand analytics.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ALTERNATING -->
+<section style="background:var(--surface-mint)">
+  <div class="wrap">
+    <div class="split">
+      <div>
+        <span class="eyebrow">Set-up</span>
+        <h2 style="margin-top:var(--s4)">Live in five minutes</h2>
+        <p style="margin-top:var(--s4);font-size:var(--fs-md)">Six short steps, all on your phone. No forms you don't understand.</p>
+        <ul class="checks">
+          <li><span class="tick">✓</span> Sign in with your mobile number — no password to remember</li>
+          <li><span class="tick">✓</span> Name your shop and pick your link</li>
+          <li><span class="tick">✓</span> Add products with photos, prices, sizes and colours</li>
+          <li><span class="tick">✓</span> Share the link, or print the QR code for your counter</li>
+        </ul>
+      </div>
+      <div class="art"><span class="big">📲</span></div>
+    </div>
+
+    <div class="split rev">
+      <div>
+        <span class="eyebrow">AI photos</span>
+        <h2 style="margin-top:var(--s4)">Phone snaps that look professional</h2>
+        <p style="margin-top:var(--s4);font-size:var(--fs-md)">We correct the lighting, colour and framing, and lift the product onto a clean backdrop.</p>
+        <ul class="checks">
+          <li><span class="tick">✓</span> The product itself is never redrawn — what you sell is what they see</li>
+          <li><span class="tick">✓</span> Your original photo is kept, so you can always revert</li>
+          <li><span class="tick">✓</span> When the background is too busy, we say so instead of guessing</li>
+        </ul>
+      </div>
+      <div class="art"><span class="big">✨</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section>
+  <div class="wrap">
+    <div class="band">
+      <div style="text-align:center"><h2>Made for how India actually shops</h2></div>
+      <div class="stats">
+        <div class="stat"><b>0%</b><small>Commission — you keep every rupee</small></div>
+        <div class="stat"><b>5 min</b><small>From sign-up to a live shop link</small></div>
+        <div class="stat"><b>16</b><small>Themes so your shop looks like yours</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- THEMES -->
+<section id="themes" style="background:var(--surface-mint)">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">Themes</span>
+      <h2 style="margin-top:var(--s4)">Your shop shouldn't look like everyone else's</h2>
+      <p>Sixteen designs built for different trades. Change yours any time — it takes one tap.</p>
+    </div>
+    <div class="themes">
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#0f766e,#5eead4)"></div><p>Modern · Electronics</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#7c2d12,#fbbf24)"></div><p>Royal · Jewellery</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#b45309,#fed7aa)"></div><p>Warm · Sweets</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#1f2937,#9ca3af)"></div><p>Atelier · Fashion</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#15803d,#bbf7d0)"></div><p>Fresh · Kirana</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#be185d,#fbcfe8)"></div><p>Bloom · Beauty</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#0c4a6e,#7dd3fc)"></div><p>Midnight · Tech</p></div>
+      <div class="theme"><div class="sw" style="background:linear-gradient(135deg,#c2410c,#fdba74)"></div><p>Saffron · Restaurant</p></div>
+    </div>
+    <div style="text-align:center;margin-top:var(--s7)"><a class="btn btn-dark" href="#">See all 16 themes</a></div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">Pricing</span>
+      <h2 style="margin-top:var(--s4)">Simple pricing, no commission</h2>
+      <p>Start free. Upgrade when your shop grows. We never take a cut of your sales.</p>
+    </div>
+
+    <div class="toggle">
+      <div class="switch" role="group" aria-label="Billing period">
+        <button id="mBtn" aria-pressed="true">Monthly</button>
+        <button id="yBtn" aria-pressed="false">Yearly</button>
+      </div>
+      <span class="save">Save up to 20%</span>
+    </div>
+
+    <div class="plans">
+      <div class="plan">
+        <h3>Free</h3>
+        <div class="price">₹0</div><div class="per">forever</div>
+        <ul>
+          <li>✓ Up to 10 products</li>
+          <li>✓ WhatsApp ordering</li>
+          <li>✓ QR code</li>
+          <li>✓ 3 AI photo credits to try</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Start free</a>
+      </div>
+
+      <div class="plan">
+        <h3>Starter</h3>
+        <div class="price"><span class="amt" data-m="₹699" data-y="₹549">₹699</span></div>
+        <div class="per"><span class="per-t">per month</span></div>
+        <ul>
+          <li>✓ Up to 100 products</li>
+          <li>✓ AI photo clean-up</li>
+          <li>✓ 5 AI credits / month</li>
+          <li>✓ Basic analytics</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Choose Starter</a>
+      </div>
+
+      <div class="plan featured">
+        <span class="tag">Most popular</span>
+        <h3 style="margin-top:8px">Business</h3>
+        <div class="price"><span class="amt" data-m="₹1,999" data-y="₹1,599">₹1,999</span></div>
+        <div class="per" style="color:rgba(255,255,255,.75)"><span class="per-t">per month</span></div>
+        <ul>
+          <li>✓ Unlimited products</li>
+          <li>✓ 30 AI credits / month</li>
+          <li>✓ All 16 themes</li>
+          <li>✓ Full analytics</li>
+          <li>✓ SURA branding removed</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Choose Business</a>
+      </div>
+
+      <div class="plan">
+        <h3>Pro</h3>
+        <div class="price"><span class="amt" data-m="₹4,999" data-y="₹3,999">₹4,999</span></div>
+        <div class="per"><span class="per-t">per month</span></div>
+        <ul>
+          <li>✓ Everything in Business</li>
+          <li>✓ 100 AI credits / month</li>
+          <li>✓ Custom domain</li>
+          <li>✓ Staff accounts</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Choose Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" style="background:var(--surface-mint)">
+  <div class="wrap">
+    <div class="head">
+      <span class="eyebrow">FAQ</span>
+      <h2 style="margin-top:var(--s4)">Questions shop owners ask</h2>
+    </div>
+    <div class="faq">
+      <details open><summary>Do my customers need to install an app?</summary><p>No. They open your link in whatever browser they already have, and order through WhatsApp — which they already use.</p></details>
+      <details><summary>Do you take a commission on my sales?</summary><p>No. Orders happen directly between you and your customer on WhatsApp. We charge a plan fee and nothing else.</p></details>
+      <details><summary>What does the AI do to my product photos?</summary><p>It corrects lighting, colour and framing, and places the product on a clean backdrop. It never redraws the product, and your original is always kept so you can revert.</p></details>
+      <details><summary>Can I change my theme later?</summary><p>Yes, any time, in one tap. Your products and link stay exactly the same.</p></details>
+      <details><summary>Can I use my own domain name?</summary><p>Yes, on the Pro plan. On other plans your shop lives at sura.shop/your-shop-name.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="wrap">
+    <div class="cta">
+      <span class="blob a"></span><span class="blob b"></span>
+      <h2>Your shop, online tonight</h2>
+      <p>Create your free shop, add a few products, and send the link to your customers before you close today.</p>
+      <a class="btn btn-primary" href="#">Create your free shop →</a>
+      <p class="microcopy" style="margin-top:var(--s4);color:rgba(255,255,255,.7)">Free plan · No credit card</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <a class="logo" href="#"><span class="mark">◧</span>SURA <span>SHOP</span></a>
+        <p style="margin-top:var(--s4);font-size:var(--fs-xs);max-width:34ch">Digital storefronts and WhatsApp commerce for Indian small businesses. By SURA CORP.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#features">Features</a></li><li><a href="#themes">Themes</a></li><li><a href="#pricing">Pricing</a></li><li><a href="#">Demo shop</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Contact</a></li><li><a href="#">Blog</a></li></ul></div>
+      <div><h4>Legal</h4><ul><li><a href="#">Terms</a></li><li><a href="#">Privacy</a></li><li><a href="#">Refund policy</a></li></ul></div>
+    </div>
+    <div class="legal">
+      <span>© 2026 SURA CORP. All rights reserved.</span>
+      <span>Made in India 🇮🇳</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const m = document.getElementById('mBtn'), y = document.getElementById('yBtn');
+  function setPeriod(yearly){
+    m.setAttribute('aria-pressed', String(!yearly));
+    y.setAttribute('aria-pressed', String(yearly));
+    document.querySelectorAll('.amt').forEach(el => {
+      el.textContent = yearly ? el.dataset.y : el.dataset.m;
+    });
+    document.querySelectorAll('.per-t').forEach(el => {
+      el.textContent = yearly ? 'per month, billed yearly' : 'per month';
+    });
+  }
+  m.addEventListener('click', () => setPeriod(false));
+  y.addEventListener('click', () => setPeriod(true));
+</script>
+</body>
+</html>

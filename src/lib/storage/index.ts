@@ -30,18 +30,33 @@ function randomName(ext: string): string {
   return `${Date.now()}-${randomBytes(6).toString("hex")}.${ext}`;
 }
 
+/** Where locally stored uploads live on disk. */
+export const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+
+/** Path prefix that serves those files. See app/api/files/[name]/route.ts. */
+export const LOCAL_URL_PREFIX = "/api/files/";
+
+/** Older rows still point straight at the public directory. */
+const LEGACY_URL_PREFIX = "/uploads/";
+
+/** True for any url this app stores locally, new or legacy. */
+export function isLocalUrl(url: string): boolean {
+  return url.startsWith(LOCAL_URL_PREFIX) || url.startsWith(LEGACY_URL_PREFIX);
+}
+
 class LocalStorageProvider implements StorageProvider {
-  private dir = path.join(process.cwd(), "public", "uploads");
   async save(buffer: Buffer, ext: string): Promise<string> {
-    await mkdir(this.dir, { recursive: true });
+    await mkdir(UPLOAD_DIR, { recursive: true });
     const name = randomName(ext);
-    await writeFile(path.join(this.dir, name), buffer);
-    return `/uploads/${name}`;
+    await writeFile(path.join(UPLOAD_DIR, name), buffer);
+    // Deliberately NOT `/uploads/${name}`. Next.js indexes the public directory
+    // when the server boots, so a file written at runtime 404s until restart.
+    return `${LOCAL_URL_PREFIX}${name}`;
   }
   async remove(url: string): Promise<void> {
-    if (!url.startsWith("/uploads/")) return;
+    if (!isLocalUrl(url)) return;
     try {
-      await unlink(path.join(this.dir, path.basename(url)));
+      await unlink(path.join(UPLOAD_DIR, path.basename(url)));
     } catch {
       /* already gone */
     }
@@ -88,12 +103,13 @@ class S3StorageProvider implements StorageProvider {
  * to make the server fetch internal addresses on someone else's behalf.
  */
 export async function readStored(url: string): Promise<Buffer | null> {
-  if (url.startsWith("/uploads/")) {
+  if (isLocalUrl(url)) {
+    const prefix = url.startsWith(LOCAL_URL_PREFIX) ? LOCAL_URL_PREFIX : LEGACY_URL_PREFIX;
     const name = path.basename(url);
     // basename() already strips traversal, but be explicit about it.
-    if (name !== url.slice("/uploads/".length)) return null;
+    if (name !== url.slice(prefix.length)) return null;
     try {
-      return await readFile(path.join(process.cwd(), "public", "uploads", name));
+      return await readFile(path.join(UPLOAD_DIR, name));
     } catch {
       return null;
     }

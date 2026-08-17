@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,20 @@ import { Button } from "@/components/ui/button";
  * The original photo is never replaced on the server — this only swaps the url
  * held in the form, so closing without choosing leaves everything as it was.
  */
+
+/** Reads an image the page can already display. Returns null if CORS blocks it. */
+async function loadImageBytes(url: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    if (!blob.type.startsWith("image/")) return null;
+    if (blob.size > 5 * 1024 * 1024) return null;
+    return blob;
+  } catch {
+    return null;
+  }
+}
 
 interface EnhanceResponse {
   originalUrl: string;
@@ -33,17 +46,32 @@ export function PhotoEnhancer({
   const [error, setError] = useState("");
   const [upgrade, setUpgrade] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [brokenPreview, setBrokenPreview] = useState(false);
 
   const run = useCallback(async () => {
     setLoading(true);
     setError("");
     setUpgrade(false);
+    setBrokenPreview(false);
     try {
-      const res = await fetch("/api/ai/enhance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
+      // Send the actual bytes wherever the browser can read them. The server
+      // will only fetch a url itself if it recognises it as our own storage,
+      // so photos hosted elsewhere (demo shops, migrated catalogues) would
+      // otherwise be rejected before they ever reach the pipeline.
+      const blob = await loadImageBytes(url);
+      let res: Response;
+      if (blob) {
+        const form = new FormData();
+        form.append("file", blob, "product.jpg");
+        form.append("url", url); // keeps the original on the job record
+        res = await fetch("/api/ai/enhance", { method: "POST", body: form });
+      } else {
+        res = await fetch("/api/ai/enhance", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+      }
       const json = await res.json();
       if (!json.ok) {
         if (res.status === 402) setUpgrade(true);
@@ -128,7 +156,19 @@ export function PhotoEnhancer({
               ).map(([label, src]) => (
                 <figure key={label}>
                   <div className="relative aspect-square overflow-hidden rounded-xl bg-ink-100">
-                    <Image src={src} alt={`${label} enhancement`} fill className="object-cover" sizes="240px" />
+                    {/*
+                      A plain <img>, not next/image, on purpose. These are
+                      throwaway previews of a file written seconds ago — running
+                      them through the image optimizer buys nothing and adds a
+                      cache round-trip that can serve a stale entry or fail.
+                    */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={`${label} enhancement`}
+                      className="h-full w-full object-cover"
+                      onError={() => setBrokenPreview(true)}
+                    />
                   </div>
                   <figcaption className="mt-1.5 text-center text-xs font-semibold text-ink-600">
                     {label}
@@ -136,6 +176,13 @@ export function PhotoEnhancer({
                 </figure>
               ))}
             </div>
+
+            {brokenPreview && (
+              <p className="mt-3 rounded-lg bg-red-50 p-2.5 text-xs text-red-700">
+                The preview images could not be loaded. The enhanced photo was
+                created successfully — please report this so we can look at it.
+              </p>
+            )}
 
             {!result.backgroundRemoved && (
               <p className="mt-3 flex gap-1.5 rounded-lg bg-ink-100 p-2.5 text-xs text-ink-600">

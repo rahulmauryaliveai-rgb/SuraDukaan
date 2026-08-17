@@ -190,34 +190,36 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
   if (entries.length === 0) return null;
 
   const arrowClass =
-    "absolute top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full " +
-    "border border-ink-200 bg-white/95 text-ink-900 shadow-card backdrop-blur transition " +
-    "hover:bg-white hover:shadow-card-hover active:scale-95 sm:flex";
+    "absolute top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-pill " +
+    "border border-line-200 bg-white/95 text-deep-800 shadow-lift backdrop-blur transition duration-300 " +
+    "hover:-translate-y-[calc(50%+2px)] hover:bg-white active:scale-95 sm:flex";
 
   return (
-    <section className="border-t border-ink-100 bg-white py-16">
-      <div className="mx-auto max-w-6xl px-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brand-800">
-          <Sparkles className="h-3.5 w-3.5" /> A theme for every kind of shop
-        </span>
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-          <h2 className="max-w-xl text-3xl font-bold leading-tight">
-            Real shops, built in minutes.
+    <section id="themes" className="border-t border-line-200 bg-white py-24">
+      <div className="mx-auto max-w-6xl px-5">
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <span className="inline-flex items-center gap-1.5 rounded-pill bg-soft-100 px-4 py-1.5 text-sm font-semibold text-deep-800">
+            <Sparkles className="h-4 w-4" /> A theme for every kind of shop
+          </span>
+          <h2 className="mt-4 text-[clamp(28px,4.4vw,56px)] font-extrabold leading-[1.08] tracking-[-0.02em] text-deep-700">
+            Your shop shouldn&apos;t look like everyone else&apos;s
           </h2>
-          <p className="text-sm text-ink-500">Tap any shop to open it live →</p>
+          <p className="mt-4 text-lg text-moss-600">
+            Real shops, running live on SURA right now. Tap any one to open it.
+          </p>
         </div>
 
         {/* Category filter */}
-        <div className="no-scrollbar -mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="no-scrollbar -mx-5 mb-2 flex justify-start gap-2 overflow-x-auto px-5 pb-1 sm:justify-center">
           {categories.map((c) => (
             <button
               key={c}
               onClick={() => setActive(c)}
               className={cn(
-                "shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition",
+                "shrink-0 rounded-pill border px-5 py-2 text-sm font-semibold transition duration-300",
                 active === c
-                  ? "border-transparent bg-ink-900 text-white"
-                  : "border-ink-300 bg-white text-ink-700 hover:bg-ink-50",
+                  ? "border-transparent bg-deep-800 text-white"
+                  : "border-line-200 bg-white text-deep-700 hover:bg-soft-50",
               )}
             >
               {c}
@@ -258,46 +260,46 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
             {visible.map((entry) => (
             <article
               key={entry.slug}
-              className="w-[19rem] shrink-0 snap-start rounded-2xl border border-ink-100 bg-white p-4 shadow-card transition hover:shadow-card-hover"
+              className="w-[19rem] shrink-0 snap-start rounded-card border border-line-200 bg-white p-4 transition duration-300 hover:-translate-y-1.5 hover:shadow-lift"
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="truncate font-semibold">{entry.name}</h3>
-                  <p className="truncate text-xs text-ink-500">
+                  <h3 className="truncate font-bold text-deep-700">{entry.name}</h3>
+                  <p className="truncate text-xs text-moss-600">
                     {entry.category}
                     {entry.city && ` · ${entry.city}`}
                   </p>
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> LIVE
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-pill bg-soft-100 px-2.5 py-1 text-[10px] font-bold text-deep-800">
+                  <span className="h-1.5 w-1.5 rounded-full bg-deep-800" /> LIVE
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <PhoneFrame entry={entry} screen="storefront" />
-                  <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-widest text-ink-500">
+                  <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-widest text-moss-600">
                     Storefront
                   </p>
                 </div>
                 <div>
                   <PhoneFrame entry={entry} screen="products" />
-                  <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-widest text-ink-500">
+                  <p className="mt-1.5 text-center text-[10px] font-semibold uppercase tracking-widest text-moss-600">
                     Products
                   </p>
                 </div>
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-ink-100 pt-3">
-                <span className="text-xs text-ink-500">
-                  <span className="font-semibold text-ink-700">{entry.themeName}</span> theme ·{" "}
+              <div className="mt-3 flex items-center justify-between border-t border-line-200 pt-3">
+                <span className="text-xs text-moss-600">
+                  <span className="font-semibold text-deep-700">{entry.themeName}</span> theme ·{" "}
                   {entry.productCount} products
                 </span>
                 <a
                   href={`/${entry.slug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-0.5 text-sm font-semibold text-brand-700 hover:underline"
+                  className="inline-flex items-center gap-0.5 text-sm font-semibold text-deep-800 hover:underline"
                 >
                   Open live <ArrowUpRight className="h-3.5 w-3.5" />
                 </a>
