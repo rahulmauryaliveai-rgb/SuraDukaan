@@ -3,6 +3,7 @@ import { requireUser, requireShop } from "@/lib/auth/session";
 import { shopCreateSchema, shopUpdateSchema } from "@/lib/validation";
 import { isValidSlug } from "@/lib/slug";
 import { ok, fail, handleApiError } from "@/lib/api";
+import { TRIAL_CREDITS } from "@/lib/credit-constants";
 
 /** Create the user's shop (one shop per owner in V1). */
 export async function POST(req: Request) {
@@ -24,8 +25,20 @@ export async function POST(req: Request) {
         category: input.category,
         city: input.city || null,
         whatsapp: input.whatsapp,
+        aiTopupCredits: TRIAL_CREDITS,
         members: { create: { userId: user.id, role: "SHOP_OWNER" } },
         theme: { create: { template: input.template } },
+      },
+    });
+
+    // Welcome credits so a new shop can try AI image generation once or twice.
+    await db.creditLedger.create({
+      data: {
+        shopId: shop.id,
+        delta: TRIAL_CREDITS,
+        reason: "trial_grant",
+        balance: TRIAL_CREDITS,
+        note: "Welcome credits",
       },
     });
 

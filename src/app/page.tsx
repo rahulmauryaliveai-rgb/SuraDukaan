@@ -11,7 +11,6 @@ import {
   Sparkles,
   LinkIcon,
   LayoutGrid,
-  Check,
   ChevronRight,
 } from "lucide-react";
 import { db } from "@/lib/db";
@@ -19,6 +18,7 @@ import { formatINR } from "@/lib/utils";
 import { getTheme } from "@/lib/themes";
 import { Button } from "@/components/ui/button";
 import { ShowcaseGallery, type ShowcaseEntry } from "@/components/marketing/showcase-gallery";
+import { PricingTable } from "@/components/marketing/pricing-table";
 
 export const metadata: Metadata = {
   title: "SURA SHOP — Turn Your Shop Into a Digital Storefront",
@@ -260,46 +260,14 @@ export default async function LandingPage() {
       </section>
 
       {/* Pricing */}
+      {/* Pricing */}
       <section id="pricing" className="border-t border-ink-100 bg-ink-50 py-16">
         <div className="mx-auto max-w-6xl px-4">
           <h2 className="text-center text-3xl font-bold">Simple, honest pricing</h2>
-          <p className="mt-2 text-center text-ink-500">Start free. Upgrade when your shop grows.</p>
-          <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`flex flex-col rounded-2xl border bg-white p-6 ${
-                  plan.code === "business" ? "border-brand-600 shadow-card-hover ring-1 ring-brand-600" : "border-ink-100 shadow-card"
-                }`}
-              >
-                {plan.code === "business" && (
-                  <span className="mb-2 self-start rounded-full bg-brand-700 px-2.5 py-0.5 text-xs font-bold text-white">
-                    Most popular
-                  </span>
-                )}
-                <h3 className="font-bold">{plan.name}</h3>
-                <p className="mt-2">
-                  <span className="text-3xl font-extrabold">{formatINR(plan.priceInr)}</span>
-                  {plan.priceInr > 0 && <span className="text-sm text-ink-500">/year</span>}
-                </p>
-                <ul className="mt-4 flex-1 space-y-1.5 text-sm text-ink-700">
-                  <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />{plan.productLimit < 0 ? "Unlimited products" : `${plan.productLimit} products`}</li>
-                  <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />Shop URL &amp; QR code</li>
-                  <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />WhatsApp orders</li>
-                  {plan.hasAnalytics && <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />Analytics</li>}
-                  {plan.hasAi && <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />AI tools</li>}
-                  {plan.hasCustomDomain && <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />Custom domain support</li>}
-                  {plan.removeBranding && <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />Remove branding</li>}
-                  {plan.hasStaffAccounts && <li className="flex gap-1.5"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600" />Staff accounts</li>}
-                </ul>
-                <Link href="/register" className="mt-6">
-                  <Button variant={plan.code === "business" ? "primary" : "outline"} className="w-full">
-                    {plan.priceInr === 0 ? "Start Free" : "Get Started"}
-                  </Button>
-                </Link>
-              </div>
-            ))}
-          </div>
+          <p className="mt-2 text-center text-ink-500">
+            Start free. Pay only when your shop grows.
+          </p>
+          <PricingTable plans={plans} />
         </div>
       </section>
 

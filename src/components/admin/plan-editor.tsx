@@ -12,8 +12,12 @@ export interface EditablePlan {
   id?: string;
   code: string;
   name: string;
+  familyCode: string;
+  interval: "MONTHLY" | "YEARLY";
   priceInr: number;
   productLimit: number; // -1 = unlimited
+  aiEnhanceEnabled: boolean;
+  aiCreditsPerMonth: number;
   hasAnalytics: boolean;
   hasAdvancedThemes: boolean;
   hasAi: boolean;
@@ -26,6 +30,7 @@ export interface EditablePlan {
 }
 
 const FEATURES: Array<[keyof EditablePlan, string]> = [
+  ["aiEnhanceEnabled", "AI photo clean-up"],
   ["hasAnalytics", "Analytics"],
   ["hasAdvancedThemes", "Advanced themes"],
   ["hasAi", "AI tools"],
@@ -57,7 +62,11 @@ function PlanCard({ initial, isNew, onSaved }: { initial: EditablePlan; isNew?: 
           ...(p.id ? { id: p.id } : {}),
           code: p.code.trim().toLowerCase(),
           name: p.name.trim(),
+          familyCode: p.familyCode,
+          interval: p.interval,
           priceInr: p.priceInr,
+          aiEnhanceEnabled: p.aiEnhanceEnabled,
+          aiCreditsPerMonth: p.aiCreditsPerMonth,
           productLimit: unlimited ? -1 : Math.max(0, p.productLimit),
           hasAnalytics: p.hasAnalytics,
           hasAdvancedThemes: p.hasAdvancedThemes,
@@ -97,9 +106,18 @@ function PlanCard({ initial, isNew, onSaved }: { initial: EditablePlan; isNew?: 
           <Badge tone={p.isActive ? "success" : "default"}>{p.isActive ? "Active" : "Disabled"}</Badge>
         </div>
 
+        <div className="mb-1 flex items-center gap-2 text-xs">
+          <span className="rounded-full bg-ink-100 px-2 py-0.5 font-semibold text-ink-700">
+            {p.familyCode}
+          </span>
+          <span className="rounded-full bg-ink-100 px-2 py-0.5 font-semibold text-ink-700">
+            {p.interval === "MONTHLY" ? "Monthly" : "Yearly"}
+          </span>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <Input
-            label="Price (₹/year)"
+            label={`Price (₹/${p.interval === "MONTHLY" ? "month" : "year"})`}
             inputMode="numeric"
             value={String(p.priceInr)}
             onChange={(e) => set("priceInr", Number(e.target.value.replace(/\D/g, "") || 0))}
@@ -133,6 +151,14 @@ function PlanCard({ initial, isNew, onSaved }: { initial: EditablePlan; isNew?: 
             placeholder="e.g. enterprise"
           />
         )}
+
+        <Input
+          label="AI credits per month"
+          inputMode="numeric"
+          value={String(p.aiCreditsPerMonth)}
+          onChange={(e) => set("aiCreditsPerMonth", Number(e.target.value.replace(/\D/g, "") || 0))}
+          hint="Generative image credits. Refill monthly, do not roll over."
+        />
 
         <fieldset>
           <legend className="mb-1.5 text-sm font-medium text-ink-700">Features</legend>
@@ -192,8 +218,12 @@ export function PlanEditorGrid({ plans }: { plans: EditablePlan[] }) {
           initial={{
             code: "",
             name: "New Plan",
+            familyCode: "custom",
+            interval: "MONTHLY",
             priceInr: 999,
             productLimit: 50,
+            aiEnhanceEnabled: true,
+            aiCreditsPerMonth: 10,
             hasAnalytics: true,
             hasAdvancedThemes: false,
             hasAi: false,

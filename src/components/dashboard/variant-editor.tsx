@@ -1,8 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, X, Plus } from "lucide-react";
+import { Trash2, X, Plus, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  SWATCH_PALETTE,
+  parseColorOption,
+  formatColorOption,
+  isColorVariant,
+  swatchBackground,
+  isLightColor,
+} from "@/lib/colors";
 
 export interface Variant {
   name: string;
@@ -30,15 +38,104 @@ const SUGGESTIONS: Record<string, string[]> = {
   flavour: ["Chocolate", "Vanilla", "Strawberry", "Butterscotch", "Mango", "Pista"],
 };
 
-const SWATCHES: Record<string, string> = {
-  black: "#111827", white: "#ffffff", red: "#dc2626", blue: "#2563eb", green: "#16a34a",
-  yellow: "#eab308", pink: "#ec4899", grey: "#9ca3af", gray: "#9ca3af", brown: "#92400e",
-  navy: "#1e3a8a", maroon: "#7f1d1d", beige: "#e7d3b1", gold: "#d4af37", silver: "#c0c0c0",
-  orange: "#ea580c", purple: "#7e22ce", cream: "#fdf6e3",
-};
-
 function suggestionsFor(name: string): string[] {
   return SUGGESTIONS[name.trim().toLowerCase()] ?? [];
+}
+
+/** Colour circles the owner taps to add, plus a picker for anything else. */
+function ColorPicker({
+  chosen,
+  onAdd,
+}: {
+  chosen: string[];
+  onAdd: (value: string) => void;
+}) {
+  const [customHex, setCustomHex] = useState("#0f766e");
+  const [customName, setCustomName] = useState("");
+
+  const chosenHexes = new Set(
+    chosen.map((c) => (parseColorOption(c).hex ?? "").toLowerCase()).filter(Boolean),
+  );
+
+  return (
+    <div className="mt-3 rounded-lg border border-ink-200 bg-white p-3">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-500">
+        Tap a colour to add
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {SWATCH_PALETTE.map((name) => {
+          const parsed = parseColorOption(name);
+          const already = chosenHexes.has((parsed.hex ?? "").toLowerCase());
+          return (
+            <button
+              key={name}
+              type="button"
+              title={name}
+              aria-label={already ? `${name} (already added)` : `Add ${name}`}
+              onClick={() => !already && onAdd(name)}
+              disabled={already}
+              className={cn(
+                "relative h-8 w-8 rounded-full border shadow-sm transition",
+                already
+                  ? "cursor-default border-brand-600 ring-2 ring-brand-600/30"
+                  : "border-black/15 hover:scale-110 hover:shadow",
+              )}
+              style={{ background: swatchBackground(parsed) }}
+            >
+              {already && (
+                <Check
+                  className={cn(
+                    "absolute inset-0 m-auto h-4 w-4",
+                    isLightColor(parsed.hex) ? "text-ink-900" : "text-white",
+                  )}
+                />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Any other shade, straight from the colour palette */}
+      <div className="mt-3 flex flex-wrap items-end gap-2 border-t border-ink-100 pt-3">
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-700">Custom colour</label>
+          <input
+            type="color"
+            value={customHex}
+            onChange={(e) => setCustomHex(e.target.value)}
+            className="h-10 w-14 cursor-pointer rounded-lg border border-ink-300 bg-white p-1"
+            aria-label="Pick a custom colour"
+          />
+        </div>
+        <div className="min-w-40 flex-1">
+          <label className="mb-1 block text-xs font-medium text-ink-700">Name it</label>
+          <input
+            className="h-10 w-full rounded-lg border border-ink-300 px-3 text-sm focus:border-brand-600 focus:outline-none"
+            placeholder="e.g. Peacock Teal"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onAdd(formatColorOption(customName || customHex, customHex));
+                setCustomName("");
+              }
+            }}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            onAdd(formatColorOption(customName || customHex, customHex));
+            setCustomName("");
+          }}
+          className="h-10 rounded-lg bg-ink-900 px-4 text-sm font-semibold text-white transition hover:bg-ink-700"
+        >
+          Add
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function VariantEditor({
@@ -115,9 +212,12 @@ export function VariantEditor({
 
       {/* Each option group */}
       {variants.map((variant, i) => {
-        const suggestions = suggestionsFor(variant.name).filter(
-          (s) => !variant.options.some((o) => o.toLowerCase() === s.toLowerCase()),
-        );
+        const isColour = isColorVariant(variant.name);
+        const suggestions = isColour
+          ? []
+          : suggestionsFor(variant.name).filter(
+              (s) => !variant.options.some((o) => o.toLowerCase() === s.toLowerCase()),
+            );
         return (
           <div key={i} className="rounded-xl border border-ink-200 bg-ink-50/40 p-3">
             <div className="flex items-center gap-2">
@@ -141,24 +241,27 @@ export function VariantEditor({
             {/* Chosen values as chips */}
             <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-lg border border-ink-300 bg-white p-2">
               {variant.options.map((option) => {
-                const swatch = SWATCHES[option.trim().toLowerCase()];
+                const parsed = parseColorOption(option);
+                const showSwatch = isColour && (parsed.hex !== null || parsed.multi);
                 return (
                   <span
                     key={option}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-ink-100 py-1 pl-2.5 pr-1.5 text-xs font-medium"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-ink-100 py-1 pl-1.5 pr-1.5 text-xs font-medium"
                   >
-                    {swatch && (
+                    {showSwatch ? (
                       <span
-                        className="h-3 w-3 rounded-full border border-black/15"
-                        style={{ background: swatch }}
+                        className="h-4 w-4 rounded-full border border-black/20"
+                        style={{ background: swatchBackground(parsed) }}
                       />
+                    ) : (
+                      <span className="w-1" />
                     )}
-                    {option}
+                    {parsed.label}
                     <button
                       type="button"
                       onClick={() => removeOption(i, option)}
                       className="rounded-full p-0.5 hover:bg-ink-300"
-                      aria-label={`Remove ${option}`}
+                      aria-label={`Remove ${parsed.label}`}
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -181,6 +284,11 @@ export function VariantEditor({
                 onBlur={() => addOption(i, drafts[i] ?? "")}
               />
             </div>
+
+            {/* Colour options get circles and a palette instead of text buttons */}
+            {isColour && (
+              <ColorPicker chosen={variant.options} onAdd={(value) => addOption(i, value)} />
+            )}
 
             {/* Tap-to-add suggestions for this option name */}
             {suggestions.length > 0 && (

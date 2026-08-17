@@ -1,5 +1,5 @@
 import "server-only";
-import { mkdir, writeFile, unlink } from "fs/promises";
+import { mkdir, writeFile, unlink, readFile } from "fs/promises";
 import path from "path";
 import { randomBytes } from "crypto";
 
@@ -77,6 +77,45 @@ class S3StorageProvider implements StorageProvider {
     throw new Error("S3 storage not configured. Set STORAGE_* env vars and install @aws-sdk/client-s3.");
   }
   async remove(): Promise<void> {}
+}
+
+/**
+ * Reads back a file this app previously stored.
+ *
+ * Deliberately strict about what it will open: a local `/uploads/` path is read
+ * straight off disk (never over HTTP), and a remote URL must live on our own
+ * blob host. An arbitrary URL from the client is refused, so this can't be used
+ * to make the server fetch internal addresses on someone else's behalf.
+ */
+export async function readStored(url: string): Promise<Buffer | null> {
+  if (url.startsWith("/uploads/")) {
+    const name = path.basename(url);
+    // basename() already strips traversal, but be explicit about it.
+    if (name !== url.slice("/uploads/".length)) return null;
+    try {
+      return await readFile(path.join(process.cwd(), "public", "uploads", name));
+    } catch {
+      return null;
+    }
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== "https:") return null;
+  if (!parsed.hostname.endsWith(".public.blob.vercel-storage.com")) return null;
+
+  try {
+    const res = await fetch(parsed.toString());
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf.length > MAX_UPLOAD_BYTES ? null : buf;
+  } catch {
+    return null;
+  }
 }
 
 export function getStorage(): StorageProvider {

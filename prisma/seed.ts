@@ -5,64 +5,11 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { SHOWCASE_SHOPS } from "./showcase";
+import { PLANS, LEGACY_PLAN_CODES } from "./plans";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const db = new PrismaClient({ adapter });
 
-const PLANS = [
-  {
-    code: "free",
-    name: "Free",
-    priceInr: 0,
-    productLimit: 20,
-    hasAnalytics: false,
-    hasAdvancedThemes: false,
-    hasAi: false,
-    hasCustomDomain: false,
-    hasStaffAccounts: false,
-    removeBranding: false,
-    sortOrder: 0,
-  },
-  {
-    code: "starter",
-    name: "Starter",
-    priceInr: 499,
-    productLimit: 100,
-    hasAnalytics: true,
-    hasAdvancedThemes: true,
-    hasAi: false,
-    hasCustomDomain: false,
-    hasStaffAccounts: false,
-    removeBranding: false,
-    sortOrder: 1,
-  },
-  {
-    code: "business",
-    name: "Business",
-    priceInr: 1499,
-    productLimit: -1,
-    hasAnalytics: true,
-    hasAdvancedThemes: true,
-    hasAi: true,
-    hasCustomDomain: true,
-    hasStaffAccounts: false,
-    removeBranding: true,
-    sortOrder: 2,
-  },
-  {
-    code: "pro",
-    name: "Pro",
-    priceInr: 2999,
-    productLimit: -1,
-    hasAnalytics: true,
-    hasAdvancedThemes: true,
-    hasAi: true,
-    hasCustomDomain: true,
-    hasStaffAccounts: true,
-    removeBranding: true,
-    sortOrder: 3,
-  },
-];
 
 const DEMO_PRODUCTS = [
   {
@@ -141,9 +88,24 @@ const DEMO_PRODUCTS = [
 ];
 
 async function main() {
-  console.log("Seeding plans…");
+  console.log(`Seeding ${PLANS.length} plans…`);
   for (const plan of PLANS) {
-    await db.plan.upsert({ where: { code: plan.code }, create: plan, update: plan });
+    await db.plan.upsert({
+      where: { code: plan.code },
+      create: { ...plan, isActive: true },
+      update: { ...plan, isActive: true },
+    });
+  }
+
+  // Retire the old single-price plans. They are kept (not deleted) so anyone
+  // already subscribed keeps their terms until renewal; they just stop being
+  // offered on the pricing page.
+  const retired = await db.plan.updateMany({
+    where: { code: { in: LEGACY_PLAN_CODES }, isActive: true },
+    data: { isActive: false },
+  });
+  if (retired.count > 0) {
+    console.log(`  retired ${retired.count} legacy plan(s)`);
   }
 
   console.log("Seeding admin user (DEV ONLY: phone 9999999999)…");

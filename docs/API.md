@@ -38,6 +38,7 @@ resolved server-side from the session — a client can never pass `shopId`.
 |--------|------|------|-------------|
 | POST | `/api/uploads` | ✓ | multipart image (JPG/PNG/WebP ≤5MB, magic-byte checked) → `{ url }`. |
 | POST | `/api/ai/product-copy` | ✓ | `{ name?, category?, hints? }` → `{ copy: { title, description, tags } }`. |
+| POST | `/api/ai/enhance` | ✓ Starter+ | `{ url \| file, productId?, backdrop?, keepBackground? }` → `{ jobId, originalUrl, enhancedUrl, backgroundRemoved, creditsCharged, creditsRemaining }`. 0 credits, 30/day. Original is never deleted. 402 if the plan lacks it. See `AI-PHOTOS.md`. |
 | POST | `/api/track` | — | Public storefront events: SHOP_VIEW, PRODUCT_VIEW, WHATSAPP_CLICK (also records an Enquiry), PRODUCT_SHARE, SHOP_SHARE, SEARCH, QR_SCAN. Rate-limited, no PII. |
 | POST | `/api/billing/upgrade` | ✓ owner only | `{ planCode }` → creates subscription + Razorpay order (sandbox simulates capture). |
 | POST | `/api/billing/webhook` | signature | Razorpay webhook (`payment.captured`, `payment.failed`). |

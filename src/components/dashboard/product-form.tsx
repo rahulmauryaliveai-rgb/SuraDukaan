@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea, Select } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VariantEditor } from "@/components/dashboard/variant-editor";
+import { PhotoEnhancer } from "@/components/dashboard/photo-enhancer";
 
 export interface ProductFormValues {
   id?: string;
@@ -63,6 +64,8 @@ export function ProductForm({
   const [aiLoading, setAiLoading] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [deleting, setDeleting] = useState(false);
+  /** Index of the photo currently open in the enhancer, if any. */
+  const [enhancing, setEnhancing] = useState<number | null>(null);
 
   function set<K extends keyof ProductFormValues>(key: K, value: ProductFormValues[K]) {
     setV((prev) => ({ ...prev, [key]: value }));
@@ -212,6 +215,13 @@ export function ProductForm({
                     <X className="h-3.5 w-3.5 text-red-600" />
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setEnhancing(i)}
+                  className="absolute inset-x-1 bottom-1 flex items-center justify-center gap-1 rounded-md bg-white/90 py-1 text-[10px] font-semibold text-brand-700 shadow hover:bg-white"
+                >
+                  <Sparkles className="h-3 w-3" /> Enhance
+                </button>
               </div>
             ))}
             {v.images.length < 8 && (
@@ -229,9 +239,26 @@ export function ProductForm({
               </label>
             )}
           </div>
-          <p className="mt-2 text-xs text-ink-500">JPG, PNG or WebP up to 5 MB. First photo is the main photo.</p>
+          <p className="mt-2 text-xs text-ink-500">
+            JPG, PNG or WebP up to 5 MB. First photo is the main photo. Tap{" "}
+            <span className="font-semibold">Enhance</span> to clean up a phone snap.
+          </p>
         </CardContent>
       </Card>
+
+      {enhancing !== null && v.images[enhancing] && (
+        <PhotoEnhancer
+          url={v.images[enhancing]}
+          onClose={() => setEnhancing(null)}
+          onUse={(enhancedUrl) => {
+            set(
+              "images",
+              v.images.map((u, idx) => (idx === enhancing ? enhancedUrl : u)),
+            );
+            setEnhancing(null);
+          }}
+        />
+      )}
 
       {/* Basics */}
       <Card>

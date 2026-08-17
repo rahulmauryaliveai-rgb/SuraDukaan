@@ -53,6 +53,27 @@ enum EnquirySource {
   SHARE
 }
 
+enum BillingInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum AiJobKind {
+  /// Clean-up of the seller's own photo — product pixels preserved.
+  ENHANCE
+  /// New scene, flat-lay or extra angle.
+  GENERATE
+  /// Garment shown on a model.
+  TRY_ON
+}
+
+enum AiJobStatus {
+  QUEUED
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
 enum AnalyticsType {
   SHOP_VIEW
   PRODUCT_VIEW
@@ -122,6 +143,12 @@ model Shop {
   isPublished   Boolean    @default(true)
   /// Featured in the public theme gallery on the landing page.
   isShowcase    Boolean    @default(false)
+  /// Monthly AI allowance remaining. Expires and refills each month.
+  aiCredits       Int       @default(0)
+  /// Purchased credits. Never expire, spent only after the allowance.
+  aiTopupCredits  Int       @default(0)
+  /// When the monthly allowance was last refilled.
+  aiCreditsRenewedAt DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
   deletedAt     DateTime?
@@ -135,6 +162,8 @@ model Shop {
   subscriptions Subscription[]
   domains       ShopDomain[]
   auditLogs     AuditLog[]
+  aiJobs        AiJob[]
+  creditLedger  CreditLedger[]
 
   @@index([slug])
   @@index([status])
@@ -281,11 +310,20 @@ model AnalyticsEvent {
 
 model Plan {
   id            String  @id @default(cuid())
-  code          String  @unique // free | starter | business | pro
+  code          String  @unique // e.g. business-monthly, business-yearly
   name          String
-  priceInr      Int     // yearly price in paise-free INR rupees
+  /// Groups the monthly and yearly variants of one plan together.
+  familyCode    String  @default("free")
+  /// How often the customer is charged.
+  interval      BillingInterval @default(YEARLY)
+  /// Amount charged per interval, in whole rupees.
+  priceInr      Int
   productLimit  Int     // -1 = unlimited
   categoryLimit Int     @default(-1)
+  /// Free, unmetered photo clean-up (background removal, lighting fix).
+  aiEnhanceEnabled  Boolean @default(false)
+  /// Generative image credits granted at the start of each month.
+  aiCreditsPerMonth Int     @default(0)
   hasAnalytics       Boolean @default(false)
   hasAdvancedThemes  Boolean @default(false)
   hasAi              Boolean @default(false)
@@ -388,6 +426,55 @@ model AuditLog {
   createdAt DateTime @default(now())
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   shop      Shop?    @relation(fields: [shopId], references: [id], onDelete: SetNull)
+
+  @@index([shopId, createdAt])
+}
+
+/// One AI image operation. Kept even after success so the seller can revert
+/// to their original photo and so credit spend is fully traceable.
+model AiJob {
+  id         String      @id @default(cuid())
+  shopId     String
+  productId  String?
+  kind       AiJobKind
+  status     AiJobStatus @default(QUEUED)
+  /// The seller's original photo.
+  inputUrl   String
+  /// Result, once the provider finishes.
+  outputUrl  String?
+  provider   String?
+  /// Credits charged. 0 for ENHANCE.
+  creditCost Int         @default(0)
+  /// Provider's job id, used to match up webhooks.
+  providerRef String?
+  error      String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  shop   Shop           @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ledger CreditLedger[]
+
+  @@index([shopId, createdAt])
+  @@index([providerRef])
+}
+
+/// Append-only record of every credit movement, so a disputed balance can
+/// always be reconstructed.
+model CreditLedger {
+  id        String   @id @default(cuid())
+  shopId    String
+  /// Negative to spend, positive to grant or refund.
+  delta     Int
+  /// monthly_grant | job_spend | job_refund | topup_purchase | admin_adjust
+  reason    String
+  /// Balance after this movement, for quick auditing.
+  balance   Int
+  jobId     String?
+  note      String?
+  createdAt DateTime @default(now())
+
+  shop Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  job  AiJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
   @@index([shopId, createdAt])
 }

@@ -43,6 +43,9 @@ src/lib/
   products.ts       tenant-scoped product service
   storefront.ts     public read models (published-only)
   plans.ts          feature gating; limits come from the Plan table
+  ai/enhance.ts     photo clean-up pipeline (sharp), pluggable bg removal
+  ai/segment.ts     offline background segmentation; refuses when unsure
+  credits.ts        AI credit ledger; atomic spend + refund
   otp/ storage/ ai.ts payments.ts   swappable provider abstractions
   slug.ts whatsapp.ts validation.ts analytics.ts
 prisma/schema.prisma          20-model multi-tenant schema
@@ -61,6 +64,9 @@ tests/                        vitest, incl. tenant-isolation.test.ts
 5. **Mobile-first.** Owners manage the shop from a phone; customers arrive from
    WhatsApp on mobile.
 6. Soft-delete (`deletedAt`) rather than hard-delete tenant data.
+7. **AI never redraws the product.** Enhancement corrects exposure, colour and
+   framing only, and the original image is always kept so the seller can
+   revert. See `docs/AI-PHOTOS.md`.
 
 ## Dev logins (seeded, development only)
 
@@ -73,4 +79,5 @@ tests/                        vitest, incl. tenant-isolation.test.ts
 Vercel + Supabase + Vercel Blob. See `docs/DEPLOY.md`.
 `push-to-github.bat` commits and pushes; Vercel auto-deploys from `main`.
 
-More detail: `README.md`, `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/SECURITY.md`.
+More detail: `README.md`, `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/SECURITY.md`,
+`docs/AI-PHOTOS.md`.

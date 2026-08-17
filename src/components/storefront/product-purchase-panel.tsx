@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Minus, Plus, Share2 } from "lucide-react";
+import { Minus, Plus, Share2, Check } from "lucide-react";
 import { formatINR, discountPercent, cn } from "@/lib/utils";
+import {
+  parseColorOption,
+  colorOptionLabel,
+  isColorVariant,
+  swatchBackground,
+  isLightColor,
+} from "@/lib/colors";
 import { WhatsAppButton } from "@/components/storefront/whatsapp-button";
 import { ShareProductButton } from "@/components/share-buttons";
 import type { ThemeTokens } from "@/lib/themes";
@@ -36,8 +43,9 @@ export function ProductPurchasePanel({
 
   const effective = product.discountPrice ?? product.price;
   const pct = product.discountPrice ? discountPercent(product.price, product.discountPrice) : 0;
+  // Colours are stored as "Name #hex"; the shopper only needs the name.
   const variantText = Object.entries(selected)
-    .map(([k, v]) => `${k}: ${v}`)
+    .map(([k, v]) => `${k}: ${isColorVariant(k) ? colorOptionLabel(v) : v}`)
     .join(", ");
 
   const message = [
@@ -117,33 +125,84 @@ export function ProductPurchasePanel({
       </p>
 
       {/* Variants */}
-      {product.variants.map((variant) => (
-        <fieldset key={variant.name} className="mt-5">
-          <legend className="mb-2 text-sm font-semibold">{variant.name}</legend>
-          <div className="flex flex-wrap gap-2">
-            {variant.options.map((opt) => {
-              const active = selected[variant.name] === opt;
-              return (
-                <button
-                  key={opt}
-                  type="button"
-                  onClick={() => setSelected((s) => ({ ...s, [variant.name]: opt }))}
-                  className="min-w-11 border px-3.5 py-2 text-sm font-medium transition"
-                  style={{
-                    borderRadius: "var(--sf-radius)",
-                    background: active ? "var(--sf-accent)" : "var(--sf-surface)",
-                    color: active ? "var(--sf-accent-ink)" : "var(--sf-ink)",
-                    borderColor: active ? "var(--sf-accent)" : "var(--sf-border)",
-                  }}
-                  aria-pressed={active}
-                >
-                  {opt}
-                </button>
-              );
-            })}
-          </div>
-        </fieldset>
-      ))}
+      {product.variants.map((variant) => {
+        const isColour = isColorVariant(variant.name);
+        const chosen = selected[variant.name];
+
+        return (
+          <fieldset key={variant.name} className="mt-5">
+            <legend className="mb-2 text-sm font-semibold">
+              {variant.name}
+              {isColour && chosen && (
+                <span className="ml-1.5 font-normal" style={{ color: "var(--sf-muted)" }}>
+                  · {colorOptionLabel(chosen)}
+                </span>
+              )}
+            </legend>
+
+            {isColour ? (
+              /* Colour circles — tap the colour itself */
+              <div className="flex flex-wrap gap-2.5">
+                {variant.options.map((opt) => {
+                  const parsed = parseColorOption(opt);
+                  const active = chosen === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      title={parsed.label}
+                      aria-label={parsed.label}
+                      aria-pressed={active}
+                      onClick={() => setSelected((s) => ({ ...s, [variant.name]: opt }))}
+                      className={cn(
+                        "relative h-10 w-10 rounded-full border transition",
+                        active ? "scale-105" : "hover:scale-105",
+                      )}
+                      style={{
+                        background: swatchBackground(parsed),
+                        borderColor: active ? "var(--sf-accent)" : "rgba(0,0,0,.18)",
+                        boxShadow: active ? "0 0 0 3px var(--sf-accent)" : undefined,
+                      }}
+                    >
+                      {active && (
+                        <Check
+                          className={cn(
+                            "absolute inset-0 m-auto h-5 w-5",
+                            isLightColor(parsed.hex) ? "text-black/80" : "text-white",
+                          )}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {variant.options.map((opt) => {
+                  const active = chosen === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setSelected((s) => ({ ...s, [variant.name]: opt }))}
+                      className="min-w-11 border px-3.5 py-2 text-sm font-medium transition"
+                      style={{
+                        borderRadius: "var(--sf-radius)",
+                        background: active ? "var(--sf-accent)" : "var(--sf-surface)",
+                        color: active ? "var(--sf-accent-ink)" : "var(--sf-ink)",
+                        borderColor: active ? "var(--sf-accent)" : "var(--sf-border)",
+                      }}
+                      aria-pressed={active}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </fieldset>
+        );
+      })}
 
       {/* Quantity */}
       <div className="mt-5">
