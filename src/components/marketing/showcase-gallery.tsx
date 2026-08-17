@@ -142,7 +142,15 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
   const visible = active === "All" ? entries : entries.filter((e) => e.category === active);
 
   const trackRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const [paused, setPaused] = useState(false);
+  /**
+   * This section now sits on every public page, including short ones like
+   * Privacy that most visitors never scroll. Autoplay stays off until the
+   * carousel is actually near the viewport, so those pages don't run a timer
+   * and re-layout work for a component nobody is looking at.
+   */
+  const [inView, setInView] = useState(false);
 
   /** Width of one card plus the gap between cards. */
   const cardStep = useCallback(() => {
@@ -172,15 +180,36 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
     [cardStep],
   );
 
+  // Start paying attention only once the carousel is close to the viewport.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInView(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   // Autoplay — stops while the visitor is hovering, touching or tabbing through.
   useEffect(() => {
-    if (paused || visible.length < 2) return;
+    if (!inView || paused || visible.length < 2) return;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
     }
     const id = window.setInterval(() => scrollByCards(1), AUTOPLAY_MS);
     return () => window.clearInterval(id);
-  }, [paused, visible.length, scrollByCards]);
+  }, [inView, paused, visible.length, scrollByCards]);
 
   // Jump back to the first card whenever the category filter changes.
   useEffect(() => {
@@ -195,7 +224,7 @@ export function ShowcaseGallery({ entries }: { entries: ShowcaseEntry[] }) {
     "hover:-translate-y-[calc(50%+2px)] hover:bg-white active:scale-95 sm:flex";
 
   return (
-    <section id="themes" className="border-t border-line-200 bg-white py-24">
+    <section ref={sectionRef} id="themes" className="scroll-mt-20 border-t border-line-200 bg-white py-24">
       <div className="mx-auto max-w-6xl px-5">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-pill bg-soft-100 px-4 py-1.5 text-sm font-semibold text-deep-800">

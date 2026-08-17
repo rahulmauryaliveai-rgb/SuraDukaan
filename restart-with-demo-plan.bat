@@ -11,5 +11,9 @@ timeout /t 3 /nobreak >nul
 
 if exist ".setup-done" del /f /q ".setup-done"
 
+rem The marketing carousel caches its shop list on disk. Clear it, or the site
+rem keeps showing the shops from before the re-seed.
+if exist ".next\cache\fetch-cache" rmdir /s /q ".next\cache\fetch-cache"
+
 node scripts\dev.mjs
 pause

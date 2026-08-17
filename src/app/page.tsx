@@ -12,13 +12,12 @@ import {
   LinkIcon,
   LayoutGrid,
   ArrowRight,
-  Check,
 } from "lucide-react";
-import { db } from "@/lib/db";
-import { formatINR } from "@/lib/utils";
-import { getTheme } from "@/lib/themes";
-import { ShowcaseGallery, type ShowcaseEntry } from "@/components/marketing/showcase-gallery";
-import { PricingTable } from "@/components/marketing/pricing-table";
+import {
+  ShopsSection,
+  PricingSection,
+  SiteFooter,
+} from "@/components/marketing/marketing-sections";
 
 export const metadata: Metadata = {
   title: "SURA SHOP — Turn Your Shop Into a Digital Storefront",
@@ -73,52 +72,6 @@ const FAQS = [
   },
 ];
 
-async function getShowcaseEntries(): Promise<ShowcaseEntry[]> {
-  try {
-    const shops = await db.shop.findMany({
-      where: { isShowcase: true, deletedAt: null, status: "LIVE" },
-      include: {
-        theme: true,
-        products: {
-          where: { deletedAt: null, isPublished: true },
-          include: { images: { where: { isMain: true }, take: 1 } },
-          orderBy: [{ isFeatured: "desc" }, { createdAt: "asc" }],
-          take: 6,
-        },
-        _count: { select: { products: { where: { deletedAt: null, isPublished: true } } } },
-      },
-      orderBy: { createdAt: "asc" },
-    });
-
-    return shops.map((s) => {
-      const theme = getTheme(s.theme?.template);
-      return {
-        slug: s.slug,
-        name: s.name,
-        category: s.category,
-        themeName: theme.name,
-        themeTagline: theme.tagline,
-        city: s.city,
-        logoUrl: s.logoUrl,
-        coverUrl: s.coverUrl,
-        productCount: s._count.products,
-        colors: theme.colors,
-        radius: theme.radius,
-        fontHeading: theme.fontHeading,
-        upperHeadings: theme.upperHeadings,
-        gridAspect: theme.grid.aspect,
-        products: s.products.map((p) => ({
-          name: p.name,
-          price: formatINR(Number(p.discountPrice ?? p.price)),
-          imageUrl: p.images[0]?.url ?? null,
-        })),
-      };
-    });
-  } catch {
-    return [];
-  }
-}
-
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-pill bg-soft-100 px-4 py-1.5 text-sm font-semibold text-deep-800">
@@ -128,11 +81,6 @@ function Eyebrow({ children }: { children: React.ReactNode }) {
 }
 
 export default async function LandingPage() {
-  const [plans, showcase] = await Promise.all([
-    db.plan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }).catch(() => []),
-    getShowcaseEntries(),
-  ]);
-
   return (
     <div className="bg-white text-moss-600">
       {/* ---------------- Nav ---------------- */}
@@ -317,7 +265,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ------- Theme gallery — real seeded shops, one per theme ------- */}
-      <ShowcaseGallery entries={showcase} />
+      <ShopsSection />
 
       {/* ---------------- Stats band ---------------- */}
       <section className="py-24">
@@ -343,20 +291,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ---------------- Pricing ---------------- */}
-      <section id="pricing" className="bg-soft-50 py-24">
-        <div className="mx-auto max-w-6xl px-5">
-          <div className="mx-auto mb-12 max-w-2xl text-center">
-            <Eyebrow>Pricing</Eyebrow>
-            <h2 className="mt-4 text-[clamp(28px,4.4vw,56px)] font-extrabold leading-[1.08] tracking-[-0.02em] text-deep-700">
-              Simple pricing, no commission
-            </h2>
-            <p className="mt-4 text-lg">
-              Start free. Upgrade when your shop grows. We never take a cut of your sales.
-            </p>
-          </div>
-          <PricingTable plans={plans} />
-        </div>
-      </section>
+      <PricingSection />
 
       {/* ---------------- FAQ ---------------- */}
       <section id="faq" className="py-24">
@@ -417,48 +352,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ---------------- Footer ---------------- */}
-      <footer className="border-t border-line-200 bg-soft-50 py-16">
-        <div className="mx-auto max-w-6xl px-5">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-            <div>
-              <Link href="/" className="flex items-center gap-2.5 text-xl font-extrabold text-deep-700">
-                <span className="flex h-9 w-9 items-center justify-center rounded-[5px] bg-deep-800 text-mint-400">
-                  <Store className="h-4 w-4" />
-                </span>
-                SURA <span className="text-brand-700">SHOP</span>
-              </Link>
-              <p className="mt-4 max-w-[34ch] text-sm">
-                Digital storefronts and WhatsApp commerce for Indian small businesses. By SURA CORP.
-              </p>
-            </div>
-            {[
-              ["Product", [["Features", "#features"], ["Themes", "#themes"], ["Pricing", "#pricing"], ["Demo shop", "/urban-threads"]]],
-              ["Company", [["About", "/features"], ["Contact", "/contact"], ["Log in", "/login"]]],
-              ["Legal", [["Terms", "/terms"], ["Privacy", "/privacy"], ["Refunds", "/refund-policy"]]],
-            ].map(([heading, links]) => (
-              <div key={heading as string}>
-                <h4 className="mb-4 text-sm font-semibold uppercase tracking-[0.08em] text-deep-700">
-                  {heading as string}
-                </h4>
-                <ul className="grid gap-2.5 text-sm">
-                  {(links as string[][]).map(([label, href]) => (
-                    <li key={label}>
-                      <Link href={href!} className="transition hover:text-deep-800">{label}</Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-line-200 pt-6 text-sm">
-            <span>© {new Date().getFullYear()} SURA CORP · SURA SHOP</span>
-            <span className="inline-flex items-center gap-1.5">
-              <Check className="h-3.5 w-3.5 text-deep-800" /> Made in India
-            </span>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

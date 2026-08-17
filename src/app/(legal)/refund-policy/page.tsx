@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 
+// Rendered per request: the shared marketing sections below this page read
+// plans and showcase shops from the database, which is not available when
+// the site is prerendered at build time.
+export const dynamic = "force-dynamic";
+
+
 export const metadata: Metadata = { title: "Refund Policy" };
 
 export default function RefundPolicyPage() {
